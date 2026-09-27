@@ -1,0 +1,154 @@
+html, body, #main {
+	margin: 0;
+	padding: 0;
+	height: 100vh;
+	width: 100vw;
+}
+
+:root {
+	color-scheme: light;
+	--sr-bg: #f1f5f9;
+	--sr-surface: #ffffff;
+	--sr-text: #172033;
+	--sr-muted: #64748b;
+	--sr-border: #dbe3ec;
+	--sr-primary: #ea580c;
+	--sr-primary-hover: #c2410c;
+	--sr-navy: #111827;
+}
+
+html, body {
+	overflow: hidden;
+}
+
+#main {
+	display: flex;
+	flex-direction: column;
+}
+
+body {
+	font-family: "Segoe UI Variable", "Segoe UI", Arial, sans-serif;
+	color: var(--sr-text);
+	background: var(--sr-bg);
+	-webkit-font-smoothing: antialiased;
+}
+
+.grid {
+	display: flex;
+	flex-wrap: wrap;
+	box-sizing: border-box;
+}
+
+.ant-menu-submenu-popup {
+	top: 56px !important;
+
+	.ant-menu {
+		padding: 6px;
+		border: 1px solid var(--sr-border);
+		border-radius: 10px;
+		box-shadow: 0 14px 35px rgba(15, 23, 42, 0.16);
+	}
+}
+
+.ant-notification {
+	text-align: left;
+}
+
+::-webkit-resizer {
+	width: 4px;
+	height: 0;
+}
+
+::-webkit-scrollbar {
+	width: 8px;
+
+	&-thumb {
+		border-radius: 8px;
+		background-color: #94a3b8;
+
+		&:hover {
+			background-color: #c7cfc1;
+		}
+	}
+
+	&-track {
+		background-color: #e2e8f0;
+	}
+
+	&-button {
+		width: 5px;
+		height: 0;
+	}
+}
+
+.ant-select-dropdown {
+	width: auto !important;
+}
+
+.ant-menu {
+	border: none;
+
+	&-item {
+		width: auto !important;
+	}
+}
+
+li[role="menuitem"] {
+	margin: 2px auto !important;
+	color: #334155;
+	border-radius: 7px;
+
+	&:hover {
+		background-color: #fff7ed;
+
+		.ant-menu-title-content,
+		.ant-dropdown-menu-title-content {
+			color: #172033 !important;
+			opacity: 1 !important;
+			visibility: visible !important;
+		}
+	}
+}
+
+// Ant Design teletransporta los submenús fuera del componente. Estos estilos
+// mantienen el texto visible al pasar el cursor tanto en el menú superior como
+// en los menús desplegables.
+.wrapper .ant-menu-horizontal > .ant-menu-submenu {
+	.ant-menu-title-content {
+		color: #cbd5e1 !important;
+		opacity: 1 !important;
+		visibility: visible !important;
+	}
+
+	&:hover .ant-menu-title-content,
+	&.ant-menu-submenu-active .ant-menu-title-content,
+	&.ant-menu-submenu-open .ant-menu-title-content {
+		color: #ffffff !important;
+	}
+}
+
+.ant-menu-submenu-popup,
+.ant-dropdown-menu {
+	.ant-menu-title-content,
+	.ant-dropdown-menu-title-content {
+		color: #334155 !important;
+		opacity: 1 !important;
+		visibility: visible !important;
+	}
+}
+
+.ant-btn-primary {
+	background: var(--sr-primary);
+	border-color: var(--sr-primary);
+	box-shadow: none;
+
+	&:hover,
+	&:focus {
+		background: var(--sr-primary-hover) !important;
+		border-color: var(--sr-primary-hover) !important;
+	}
+}
+
+.ant-modal-content {
+	border-radius: 14px;
+}
