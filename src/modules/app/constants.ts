@@ -4,5 +4,5 @@ import type { IAppConstants } from './types'
 export class AppConstants implements IAppConstants {
 	readonly NAME = 'SnowRunner Studio'
 
-	readonly VERSION = '0.1.0'
+	readonly VERSION = '0.2.0'
 }

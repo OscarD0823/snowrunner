@@ -4,7 +4,6 @@
   <template v-if="!loading.state.isLoading">
     <Menu v-if="page !== Page.setup" />
     <EditorActions />
-    <Update />
     <GameUpdate v-model="gameUpdateOpened" />
 		
     <Setup v-if="page === Page.setup" />
@@ -24,7 +23,7 @@ import { Menu } from '@renderer/components/menu'
 import { useWindowReady } from '@renderer/utilities/use-window-ready'
 import { hasItems } from '@utilities/checks/renderer'
 import { di } from '@utilities/di/container'
-import { CHECKS_TOKEN, DIRS_TOKEN, DLC_TOKEN, EDITED_TOKEN, FILES_TOKEN, LOADING_TOKEN, SYSTEM_TOKEN, WINDOWS_TOKEN } from '@utilities/di/renderer/tokens'
+import { DIRS_TOKEN, DLC_TOKEN, EDITED_TOKEN, FILES_TOKEN, LOADING_TOKEN, SYSTEM_TOKEN, WINDOWS_TOKEN } from '@utilities/di/renderer/tokens'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Editor } from '../editor'
@@ -33,7 +32,6 @@ import { editorUtils } from '../lists/utilities/editor'
 import { Setup } from '../setup'
 import { useEditorStore } from '../store/editor'
 import { usePageStore } from '../store/page'
-import Update from '../update/update.vue'
 import EditorActions from './editor-actions.vue'
 import GameUpdate from './game-update.vue'
 import { GENERAL_LOCALIZATION as texts } from './localization'
@@ -57,10 +55,7 @@ function useGameUpdate() {
 	watch(
 		computed(() => loading.state.isLoading),
 		() => {
-			const checks = di.resolve(CHECKS_TOKEN)
 			const edited = di.resolve(EDITED_TOKEN)
-
-			void checks.checkUpdate()
 
 			setTimeout(async () => {
 				if (hasItems(edited)

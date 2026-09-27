@@ -28,7 +28,7 @@
 <script lang='ts' setup>
 import { Lang, parseStrToLang } from '@modules/data/config/enums'
 import { di } from '@utilities/di/container'
-import { CONFIG_TOKEN, GAME_TEXTS_TOKEN } from '@utilities/di/renderer/tokens'
+import { CONFIG_MANAGER_TOKEN, CONFIG_TOKEN, GAME_TEXTS_TOKEN } from '@utilities/di/renderer/tokens'
 import { Segmented, Select } from 'ant-design-vue'
 import { nextTick } from 'vue'
 import { LANGUAGE_LOCALIZATION as texts } from './localization'
@@ -40,7 +40,21 @@ export type LanguageProps = {
 
 defineProps<LanguageProps>()
 
-const options = langToOptions(Lang)
+const options = [
+	{ label: '🇪🇸 Español', value: Lang.es },
+	{ label: '🇬🇧 English', value: Lang.en },
+	{ label: '🇫🇷 Français', value: Lang.fr },
+	{ label: '🇮🇹 Italiano', value: Lang.it },
+	{ label: '🇩🇪 Deutsch', value: Lang.de },
+	{ label: '🇨🇿 Čeština', value: Lang.cs },
+	{ label: '🇯🇵 日本語', value: Lang.ja },
+	{ label: '🇰🇷 한국어', value: Lang.ko },
+	{ label: '🇵🇱 Polski', value: Lang.pl },
+	{ label: '🇧🇷 Português (Brasil)', value: Lang.ptBr },
+	{ label: '🇷🇺 Русский', value: Lang.ru },
+	{ label: '🇨🇳 简体中文', value: Lang.ch },
+	{ label: '🇹🇼 繁體中文', value: Lang.zhTw }
+]
 const config = di.resolve(CONFIG_TOKEN)
 const gameTexts = di.resolve(GAME_TEXTS_TOKEN)
 
@@ -54,29 +68,27 @@ async function changeLang(newLang: Lang) {
 	}
 
 	config.lang = newLang
+	await di.resolve(CONFIG_MANAGER_TOKEN).save()
 	await nextTick()
 	await gameTexts.initFromInitial()
 	await gameTexts.initFromMods()
 }
 
-/**
- * Преобразовать `Lang` в опции `Select`.
- * @param lang Язык.
- * @returns Опции `Select`.
- */
-function langToOptions(lang: typeof Lang): { label: string, value: string }[] {
-	return Object.entries(lang).map(([name, value]) => ({
-		label: name.toUpperCase(),
-		value: value
-	}))
-}
 </script>
 
 <style lang='scss' scoped>
 .lang-label {
-	color: black;
-	display: inline-block;
-	margin-right: 15px;
-	font-size: 1rem;
+	display: block;
+	margin-bottom: 7px;
+	color: #64748b;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-align: left;
+	text-transform: uppercase;
+}
+
+:deep(.ant-select) {
+	width: 260px;
 }
 </style>

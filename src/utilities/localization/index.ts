@@ -1,6 +1,7 @@
 import { Lang } from '@modules/data/config/enums'
 import { computed } from 'vue'
 import { translateToSpanish } from './spanish'
+import { translateFallback } from './translations'
 import type { ITextsToLocalize, LocalizedTexts } from './types'
 
 /** Локализация. */
@@ -63,7 +64,7 @@ export class LocalizationStrings<T = string> {
 
 			return config.lang === Lang.es
 				? translateToSpanish(englishValue)
-				: englishValue
+				: translateFallback(englishValue, config.lang)
 		}).value
 	}
 

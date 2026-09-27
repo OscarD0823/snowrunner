@@ -246,6 +246,18 @@ export const LISTS_LOCALIZATION = loadLocalization(new Localization({
 		.es('Cambiar la vista de la lista')
 		.en('Change list view'),
 
+	viewLabel: new LocalizationStrings()
+		.es('Vista')
+		.en('View'),
+
+	cardsView: new LocalizationStrings()
+		.es('Tarjetas')
+		.en('Cards'),
+
+	listView: new LocalizationStrings()
+		.es('Lista')
+		.en('List'),
+
 	librarySections: new LocalizationStrings()
 		.es('Apartados')
 		.en('Sections'),

@@ -1,13 +1,15 @@
 <template>
   <Modal
     v-model:open="isOpen"
-    width="fit-content"
+    width="520px"
     :title="texts.title"
   >
     <div class="settings">
-      <Language />
+	  <section class="settings-section">
+	    <Language />
+	  </section>
 		
-      <div class="checkboxes">
+      <section class="settings-section checkboxes">
         <BoolSetting
           v-model="mods"
           :label="texts.modsLabel"
@@ -16,7 +18,11 @@
           v-model="advanced"
           :label="texts.advancedModeLabel"
         />
-      </div>
+        <BoolSetting
+          v-model="updates"
+          :label="texts.updatesLabel"
+        />
+      </section>
     </div>
 
     <template #footer>
@@ -43,9 +49,11 @@ import { SETTINGS_LOCALIZATION as texts } from './localization.js'
 const config = di.resolve(CONFIG_TOKEN)
 const mods = ref(config.useMods)
 const advanced = ref(config.advancedMode)
+const updates = ref(config.checkUpdates)
 
 watch(mods, () => config.useMods = mods.value)
 watch(advanced, () => config.advancedMode = advanced.value)
+watch(updates, () => config.checkUpdates = updates.value)
 
 /** Открыты ли настройки. */
 const isOpen = defineModel<boolean>({ required: true })
@@ -53,13 +61,20 @@ const isOpen = defineModel<boolean>({ required: true })
 
 <style lang='scss' scoped>
 .settings {
-	text-align: center;
-	margin: 0 50px;
+	display: grid;
+	gap: 14px;
+	padding: 8px 2px;
+
+	.settings-section {
+		padding: 16px;
+		background: #f8fafc;
+		border: 1px solid #e2e8f0;
+		border-radius: 12px;
+	}
 
 	.checkboxes {
-		margin: 10px auto;
-		text-align: left;
-		width: fit-content;
+		display: grid;
+		gap: 12px;
 	}
 }
 </style>

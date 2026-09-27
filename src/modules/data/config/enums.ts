@@ -22,7 +22,31 @@ export enum Lang {
 	de = 'DE',
 
 	/** Китайский (упрощённый). */
-	ch = 'CH'
+	ch = 'ZH-CN',
+
+	/** Français. */
+	fr = 'FR',
+
+	/** Italiano. */
+	it = 'IT',
+
+	/** Čeština. */
+	cs = 'CS',
+
+	/** 日本語. */
+	ja = 'JA',
+
+	/** 한국어. */
+	ko = 'KO',
+
+	/** Polski. */
+	pl = 'PL',
+
+	/** Português do Brasil. */
+	ptBr = 'PT-BR',
+
+	/** 中文（繁體）. */
+	zhTw = 'ZH-TW'
 }
 
 /**
@@ -36,8 +60,14 @@ export function strToLang(str?: string): Lang | undefined {
 		return
 	}
 
+	const normalized = str.toUpperCase().replaceAll('_', '-')
+
+	if (normalized === 'CH' || normalized === 'ZH' || normalized === 'ZH-HANS') {
+		return Lang.ch
+	}
+
 	for (const value of Object.values(Lang)) {
-		if (str === value) {
+		if (normalized === value) {
 			return value
 		}
 	}
@@ -54,13 +84,17 @@ export function localeToLang(locale?: string): Lang | undefined {
 		return
 	}
 
-	const langStr = locale.toLowerCase()
-
-	for (const value of Object.values(Lang)) {
-		if (langStr.includes(value.toLowerCase())) {
-			return value
-		}
+	const langStr = locale.toLowerCase().replaceAll('_', '-')
+	const exact: Record<string, Lang> = {
+		'pt-br': Lang.ptBr,
+		'zh-tw': Lang.zhTw,
+		'zh-hk': Lang.zhTw,
+		'zh-cn': Lang.ch,
+		'zh-sg': Lang.ch
 	}
+
+	return exact[langStr]
+		?? Object.values(Lang).find(value => langStr.startsWith(value.toLowerCase().split('-')[0]))
 }
 
 /**

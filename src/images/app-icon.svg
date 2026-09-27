@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="SnowRunner Studio">
+  <defs>
+    <linearGradient id="bg" x1="72" y1="44" x2="440" y2="468" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#172554"/>
+      <stop offset="1" stop-color="#08111f"/>
+    </linearGradient>
+    <linearGradient id="road" x1="256" y1="230" x2="256" y2="426" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff7ed"/>
+      <stop offset="1" stop-color="#fb923c"/>
+    </linearGradient>
+  </defs>
+  <rect x="22" y="22" width="468" height="468" rx="112" fill="url(#bg)" stroke="#f97316" stroke-width="18"/>
+  <circle cx="256" cy="256" r="164" fill="#0f172a" stroke="#f97316" stroke-width="34" stroke-dasharray="24 12"/>
+  <circle cx="256" cy="256" r="132" fill="url(#bg)" stroke="#fdba74" stroke-opacity=".3" stroke-width="4"/>
+  <path d="M126 284 214 161l42 57 46-71 93 137H126Z" fill="#dbeafe"/>
+  <path d="m184 204 30-43 42 57 46-71 36 53-36-19-45 58-42-40-32 28-27 2 28-25Z" fill="#fff"/>
+  <path d="M230 425c-9-66 64-82 40-137-10-23-37-35-35-61 2-20 18-35 38-44" fill="none" stroke="#07101d" stroke-width="42" stroke-linecap="round"/>
+  <path d="M230 425c-9-66 64-82 40-137-10-23-37-35-35-61 2-20 18-35 38-44" fill="none" stroke="url(#road)" stroke-width="20" stroke-linecap="round"/>
+  <path d="M240 390c1-17 9-30 20-43M267 314c2-11 1-21-4-31M244 246c-3-10-3-20 1-29" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-dasharray="12 11"/>
+</svg>

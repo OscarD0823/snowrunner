@@ -37,7 +37,7 @@ export class Config implements IMainConfigManager {
 		advancedMode: false,
 		useMods: true,
 		openWhatsNew: true,
-		checkUpdates: false,
+		checkUpdates: true,
 		optimizeUnpack: false
 	}
 
@@ -121,7 +121,7 @@ export class Config implements IMainConfigManager {
 
 		if (config.version === this.default.version) {
 			config = { ...this.default, ...config }
-		} else if (config.version < this.default.version) {
+		} else if (this.isOlderVersion(config.version, this.default.version)) {
 			config = this.convertToNewest(config)
 			this.dirs.mainTemp.removeSync()
 		} else {
@@ -130,9 +130,10 @@ export class Config implements IMainConfigManager {
 
 		config.version = this.default.version
 
-		if (isNullable(config.lang)) {
-			config.lang = this.default.lang
-		}
+
+		config.lang = isNullable(config.lang)
+			? this.default.lang
+			: strToLang(String(config.lang)) ?? this.default.lang
 
 		return config
 	}
@@ -143,16 +144,31 @@ export class Config implements IMainConfigManager {
 	 * @returns Адаптированная конфигурация.
 	 */
 	private convertToNewest(data: IConfig): IConfig {
-		const minConvertibleVersion = '1.0.0'
+		return {
+			...this.default,
+			...data,
+			version: this.default.version,
+			initialPath: data.initialPath ?? null,
+			// Las versiones anteriores no disponían de un actualizador funcional.
+			// Lo activamos una sola vez durante la migración; después la elección
+			// del usuario se conserva normalmente en la misma versión.
+			checkUpdates: true
+		}
+	}
 
-		return data.version < minConvertibleVersion
-			? this.default
-			: {
-				...this.default,
-				...data,
-				initialPath: data.initialPath !== undefined
-					? data.initialPath
-					: null
+	private isOlderVersion(current: string, target: string) {
+		const currentParts = current.split('.').map(part => Number.parseInt(part, 10) || 0)
+		const targetParts = target.split('.').map(part => Number.parseInt(part, 10) || 0)
+		const length = Math.max(currentParts.length, targetParts.length)
+
+		for (let index = 0; index < length; index++) {
+			const difference = (currentParts[index] ?? 0) - (targetParts[index] ?? 0)
+
+			if (difference !== 0) {
+				return difference < 0
 			}
+		}
+
+		return false
 	}
 }

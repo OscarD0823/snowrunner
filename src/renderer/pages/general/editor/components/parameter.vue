@@ -10,7 +10,7 @@
     <div class="label">
       <Wrap
         :wrapper="popover"
-        :wrap="!!descRef && config.lang !== Lang.ch"
+        :wrap="!!descRef && ![Lang.ch, Lang.zhTw].includes(config.lang)"
       >
         <template #content>
           <Text>{{ descRef }}</Text>

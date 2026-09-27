@@ -97,4 +97,3 @@ test.js
 dist
 artifacts/
 .snowrunner-data/
-package-lock.json

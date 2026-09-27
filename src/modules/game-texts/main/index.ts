@@ -9,6 +9,8 @@ import type { IGameTexts, IMainGameTexts, ITranslation } from '../types'
 
 /** Работа с игровой локализацией. [main] */
 export class GameTexts implements IMainGameTexts {
+	private mainStringsWatcher?: FSWatcher
+
 	/** Конфигурация программы. */
 	@inject(CONFIG_TOKEN)
 	private readonly config!: IConfig
@@ -18,15 +20,20 @@ export class GameTexts implements IMainGameTexts {
 	private readonly dirs!: IDirs
 
 	/** Название файлов локализаций игры для каждого языка. */
-	private readonly locals: Record<Lang, string> = {
-		// SnowRunner no incluye textos de juego en español dentro de initial.pak.
-		// Usamos los nombres ingleses solo para vehículos y objetos; la interfaz
-		// y todas las explicaciones del editor sí se muestran en español.
-		[Lang.es]: 'english',
-		[Lang.ru]: 'russian',
-		[Lang.en]: 'english',
-		[Lang.de]: 'german',
-		[Lang.ch]: 'chinese_simplified'
+	private readonly locals: Record<Lang, string[]> = {
+		[Lang.es]: ['spanish', 'spanish_spain', 'english'],
+		[Lang.ru]: ['russian', 'english'],
+		[Lang.en]: ['english'],
+		[Lang.de]: ['german', 'english'],
+		[Lang.ch]: ['chinese_simplified', 'english'],
+		[Lang.fr]: ['french', 'english'],
+		[Lang.it]: ['italian', 'english'],
+		[Lang.cs]: ['czech', 'english'],
+		[Lang.ja]: ['japanese', 'english'],
+		[Lang.ko]: ['korean', 'english'],
+		[Lang.pl]: ['polish', 'english'],
+		[Lang.ptBr]: ['brazilian_portuguese', 'portuguese_brazil', 'portuguese', 'english'],
+		[Lang.zhTw]: ['chinese_traditional', 'traditional_chinese', 'english']
 	}
 
 	accessor object: IGameTexts = {
@@ -44,7 +51,17 @@ export class GameTexts implements IMainGameTexts {
 		}
 
 		const archiver = di.resolve(ARCHIVER_TOKEN)
-		const stringsFile = this.dirs.strings.file(`strings_${this.locals[this.config.lang]}.str`)
+		const candidates = this.locals[this.config.lang] ?? this.locals[Lang.en]
+		let stringsFile = this.dirs.strings.file('strings_english.str')
+
+		for (const locale of candidates) {
+			const candidate = this.dirs.strings.file(`strings_${locale}.str`)
+
+			if (await candidate.exists()) {
+				stringsFile = candidate
+				break
+			}
+		}
 		const parse = async () => {
 				await archiver.isInitialUnpacking
 
@@ -57,13 +74,11 @@ export class GameTexts implements IMainGameTexts {
 			return
 		}
 
-		let watcher: FSWatcher | undefined
-
 		const watchAndParse = async () => {
 			try {
 				await archiver.isInitialUnpacking
-				watcher?.close()
-				watcher = stringsFile.watch(parse).on('error', watchAndParse)
+				this.mainStringsWatcher?.close()
+				this.mainStringsWatcher = stringsFile.watch(parse).on('error', watchAndParse)
 				await parse()
 			} catch {}
 		}

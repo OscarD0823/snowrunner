@@ -1,19 +1,23 @@
 # SnowRunner Studio
 
-Editor visual de archivos XML de **SnowRunner**, adaptado al español y pensado para que cada ajuste explique con claridad qué modifica.
+Editor visual multilingüe de archivos XML de **SnowRunner**, pensado para que cada ajuste explique con claridad qué modifica.
 
 La aplicación permite explorar vehículos y remolques, cambiar sus parámetros desde una interfaz gráfica y guardar los cambios de nuevo en `initial.pak`. Antes de editar crea una copia de seguridad del archivo original.
 
 ## Estado del proyecto
 
-Esta es la primera versión propia (`0.1.0`). Incluye:
+La versión `0.2.0` incluye:
 
 - interfaz y descripciones técnicas completas en español;
 - asistente inicial que explica cómo localizar `initial.pak`;
 - acciones visibles para guardar, importar, exportar y restablecer;
 - filtros con etiquetas claras para vehículos, remolques, DLC y modificaciones;
 - diseño renovado y copia de seguridad antes de editar;
-- selector de idioma, conservando los idiomas del proyecto original.
+- navegación separada para camiones, remolques, elementos modificados y mods;
+- vistas de tarjetas y lista, con detección manual de contenido nuevo;
+- los 13 idiomas de interfaz disponibles oficialmente en SnowRunner;
+- imágenes de los mods cuando el paquete incluye una miniatura compatible;
+- instalador de Windows y actualizaciones automáticas mediante GitHub Releases.
 
 Los nombres de vehículos y objetos se leen de los textos incluidos por el propio juego. Cuando SnowRunner no proporciona una cadena en español, se utiliza el nombre inglés.
 
@@ -26,13 +30,17 @@ npm install
 npm start
 ```
 
-Para crear la versión ejecutable portable:
+Para crear el instalador ejecutable:
 
 ```powershell
 npm run build:exe
 ```
 
-El resultado se guarda dentro de `out/SnowRunner Studio-win32-x64`. La carpeta `resources` debe permanecer junto al ejecutable.
+El resultado se guarda dentro de `out/make/squirrel.windows/x64`. El archivo `SnowRunner Studio Setup.exe` instala la aplicación y crea sus accesos directos.
+
+## Publicar una versión
+
+Actualiza la versión de `package.json`, crea un tag con el formato `vX.Y.Z` y súbelo a GitHub. El flujo de GitHub Actions compila el instalador y adjunta `Setup.exe`, el paquete `.nupkg` y `RELEASES` a una nueva publicación. Las instalaciones existentes consultan esas publicaciones al abrirse y cada 30 minutos.
 
 ## Comprobaciones de desarrollo
 

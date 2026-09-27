@@ -21,32 +21,11 @@
         <Tooltip :title="texts.filtersButton">
           <Button
             class="header-button"
-            shape="circle"
             :aria-label="texts.filtersButton"
             @click="toggleFiltersPanel"
           >
-            <template #icon>
-              <FilterOutlined class="button-icon" />
-            </template>
-          </Button>
-        </Tooltip>
-        <Tooltip :title="texts.viewButton">
-          <Button
-            class="header-button"
-            shape="circle"
-            :aria-label="texts.viewButton"
-            @click="toggleListMode"
-          >
-            <template #icon>
-              <MenuOutlined
-                v-if="listMode === ListMode.cards"
-                class="button-icon"
-              />
-              <AppstoreOutlined
-                v-else
-                class="button-icon"
-              />
-            </template>
+            <FilterOutlined class="button-icon" />
+            <span>{{ texts.filtersButton }}</span>
           </Button>
         </Tooltip>
       </div>
@@ -87,6 +66,14 @@
           @change="setSource($event as SourceType)"
         />
       </div>
+      <div class="quick-sections__group quick-sections__group--view">
+        <span class="quick-sections__label">{{ texts.viewLabel }}</span>
+        <Segmented
+          :value="listMode"
+          :options="viewSections"
+          @change="setListMode($event as ListMode)"
+        />
+      </div>
     </div>
     <Filters :is-open="filtersIsOpen" />
     <div
@@ -108,7 +95,7 @@ import { di } from '@utilities/di/container'
 import { APP_TOKEN, CHECKS_TOKEN, DLC_TOKEN, MESSAGES_TOKEN, MODS_TOKEN } from '@utilities/di/renderer/tokens'
 import { Button, Segmented, Spin, Tooltip } from 'ant-design-vue'
 import { storeToRefs } from 'pinia'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, h, onMounted, ref, watch } from 'vue'
 import { Category, ListMode, SourceType } from '../enums'
 import { useListStore } from '../store/list'
 import Filters from './components/filters.vue'
@@ -131,6 +118,17 @@ const quickSections = computed(() => [
 	{ label: `${texts.editedSource} (${files.value[SourceType.edited].length})`, value: SourceType.edited },
 	{ label: `${texts.favoritesSource} (${files.value[SourceType.favorites].length})`, value: SourceType.favorites },
 	{ label: `${texts.modsSource} (${files.value[SourceType.mods].length})`, value: SourceType.mods }
+])
+
+const viewSections = computed(() => [
+	{
+		label: h('span', { class: 'view-option' }, [h(AppstoreOutlined), texts.cardsView]),
+		value: ListMode.cards
+	},
+	{
+		label: h('span', { class: 'view-option' }, [h(MenuOutlined), texts.listView]),
+		value: ListMode.list
+	}
 ])
 
 const filtersIsOpen = ref(true)
@@ -221,12 +219,6 @@ function toggleFiltersPanel() {
 	filtersIsOpen.value = !filtersIsOpen.value
 }
 
-function toggleListMode() {
-	setListMode(listMode.value === ListMode.cards
-		? ListMode.list
-		: ListMode.cards
-	)
-}
 </script>
 
 <style lang='scss'>
@@ -338,12 +330,16 @@ function toggleListMode() {
 	}
 
 	.header-button {
+		display: inline-flex;
+		align-items: center;
+		gap: 7px;
+		height: 36px;
 		color: white;
 		background: rgba(255, 255, 255, 0.08);
 		border-color: rgba(255, 255, 255, 0.15);
 
 		.button-icon {
-			font-size: 18px;
+			font-size: 16px;
 		}
 	}
 
@@ -382,6 +378,10 @@ function toggleListMode() {
 			gap: 10px;
 		}
 
+		&__group--view {
+			margin-left: auto;
+		}
+
 		&__label {
 			color: #64748b;
 			font-size: 11px;
@@ -395,12 +395,22 @@ function toggleListMode() {
 			font-weight: 650;
 		}
 
+		:deep(.view-option) {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+		}
+
 		@media (max-width: 1050px) {
 			align-items: stretch;
 			flex-direction: column;
 
 			&__group {
 				justify-content: space-between;
+			}
+
+			&__group--view {
+				margin-left: 0;
 			}
 		}
 	}

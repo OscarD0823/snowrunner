@@ -18,6 +18,9 @@
         width="63"
         height="87"
         :src="imgSRC"
+        :alt="name"
+        loading="lazy"
+        @error="useDefaultImage"
       >
       <div class="description">
         <Text class="title">
@@ -63,6 +66,9 @@
           width="230"
           height="300"
           :src="imgSRC"
+          :alt="name"
+          loading="lazy"
+          @error="useDefaultImage"
         >
       </template>
       <Card.Meta class="card-title">
@@ -306,6 +312,14 @@ function openEditor() {
 function toggleFav() {
 	toggleFavorite(file.value)
 }
+
+function useDefaultImage() {
+	const defaultImage = images.getDefault(category.value)
+
+	if (imgSRC.value !== defaultImage) {
+		imgSRC.value = defaultImage
+	}
+}
 </script>
 
 <style lang='scss'>
@@ -355,7 +369,9 @@ function toggleFav() {
 		.row {
 			display: flex;
 			box-sizing: border-box;
-			min-width: 400px;
+			width: 100%;
+			min-width: 0;
+			min-height: 92px;
 			gap: 20px;
 			flex-direction: row;
 			flex-wrap: nowrap;
@@ -363,17 +379,23 @@ function toggleFav() {
 			justify-content: flex-start;
 			background: white;
 			border-radius: 10px;
-			box-shadow: 0 1px 2px 0 rgba(34, 60, 80, 0.6);
+			border: 1px solid #dbe3ec;
+			box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
 			overflow: hidden;
 			cursor: pointer;
-			transition: background-color 0.1s ease-in-out;
+			transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 
 			&:hover {
-				filter: brightness(96%);
+				background: #fff7ed;
+				border-color: #fdba74;
+				transform: translateX(2px);
 			}
 
 			img {
-				box-shadow: 1px 0 3px 0 rgba(34, 60, 80, 0.6);
+				align-self: stretch;
+				background: #f8fafc;
+				box-shadow: 1px 0 3px rgba(15, 23, 42, 0.12);
+				object-fit: contain;
 			}
 
 			.description {

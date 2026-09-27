@@ -3,6 +3,7 @@
     v-if="files"
     ref="container"
     class="list"
+    :class="{ 'list--rows': listMode === ListMode.list }"
   >
     <div class="list-summary">
       <strong>{{ files[source].length }} {{ texts.resultCount }}</strong>
@@ -24,6 +25,11 @@
       :show="isShowMods"
       @hide="hideModsPopup"
     />
+    <Empty
+      v-if="files[source].length === 0"
+      class="empty-state"
+      :description="texts.emptyList"
+    />
     <ListItem
       v-for="item of listItems"
       :key="item.file.name"
@@ -43,16 +49,16 @@ import { InfoCircleOutlined } from '@ant-design/icons-vue'
 import Spin from '@renderer/components/spin.vue'
 import { di } from '@utilities/di/container'
 import { APP_TOKEN } from '@utilities/di/renderer/tokens'
-import { Button, Modal } from 'ant-design-vue'
+import { Button, Empty, Modal } from 'ant-design-vue'
 import { storeToRefs } from 'pinia'
 import { computed, nextTick, ref, watch } from 'vue'
-import { SourceType } from '../../../enums'
+import { ListMode, SourceType } from '../../../enums'
 import { useListStore } from '../../../store/list'
 import { LISTS_LOCALIZATION as texts } from '../../localization'
 import ModsPopup from '../mods-popup.vue'
 import ListItem from './item.vue'
 
-const { category, source, files } = storeToRefs(useListStore())
+const { category, source, files, listMode } = storeToRefs(useListStore())
 const isShowMods = ref(false)
 const container = ref<HTMLDivElement | null>(null)
 const listItems = getItems()
@@ -104,6 +110,19 @@ function useScrollResetting() {
 	background: var(--sr-bg);
 }
 
+.list--rows {
+	display: block;
+
+	.list-summary {
+		margin-bottom: 14px;
+	}
+
+	:deep(.card-container) {
+		width: 100%;
+		margin-bottom: 10px;
+	}
+}
+
 .list-summary {
 	display: flex;
 	align-items: center;
@@ -135,5 +154,12 @@ function useScrollResetting() {
 		width: 100%;
 		text-align: center;
 	}
+}
+
+.empty-state {
+	display: grid;
+	place-items: center;
+	width: 100%;
+	min-height: 240px;
 }
 </style>

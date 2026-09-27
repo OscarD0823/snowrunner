@@ -2,6 +2,30 @@ import { Localization, LocalizationStrings } from '@localization'
 import { loadLocalization } from '@localization/renderer'
 
 export const MENU_LOCALIZATION = loadLocalization(new Localization({
+	brandSubtitle: new LocalizationStrings()
+		.es('Estudio de configuración de vehículos')
+		.en('Vehicle configuration studio'),
+
+	trucksNav: new LocalizationStrings()
+		.es('Camiones')
+		.en('Trucks'),
+
+	trailersNav: new LocalizationStrings()
+		.es('Remolques')
+		.en('Trailers'),
+
+	editedNav: new LocalizationStrings()
+		.es('Modificados')
+		.en('Edited'),
+
+	modsNav: new LocalizationStrings()
+		.es('Mods')
+		.en('Modifications'),
+
+	releasesTitle: new LocalizationStrings()
+		.es('Versiones y descargas')
+		.en('Releases and downloads'),
+
 	/** Текст кнопки открытия. */
 	openButton: new LocalizationStrings()
 		.ru('Открыть')

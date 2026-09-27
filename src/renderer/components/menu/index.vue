@@ -5,13 +5,32 @@
       aria-label="SnowRunner Studio"
     >
       <div class="brand-mark">
-        SR
+        <img
+          :src="appIconUrl"
+          alt=""
+        >
       </div>
       <div class="brand-copy">
         <strong>SnowRunner Studio</strong>
-        <span>Editor XML en español</span>
+        <span>{{ texts.brandSubtitle }}</span>
       </div>
     </div>
+    <nav
+      class="workspace-navigation"
+      :aria-label="texts.brandSubtitle"
+    >
+      <button
+        v-for="item in workspaceItems"
+        :key="item.key"
+        type="button"
+        class="workspace-navigation__item"
+        :class="{ 'workspace-navigation__item--active': item.active }"
+        @click="item.onClick"
+      >
+        <component :is="item.icon" />
+        <span>{{ item.label }}</span>
+      </button>
+    </nav>
     <Menu
       class="menu"
       trigger-sub-menu-action="click"
@@ -31,13 +50,16 @@
 </template>
 
 <script lang='ts' setup>
+import { AppstoreAddOutlined, CarOutlined, CloudDownloadOutlined, ContainerOutlined, DatabaseOutlined, EditOutlined, FileOutlined, FolderOpenOutlined, GithubOutlined, InfoCircleOutlined, LogoutOutlined, QuestionCircleOutlined, RollbackOutlined, SaveOutlined, SettingOutlined, SyncOutlined } from '@ant-design/icons-vue'
 import { Page } from '@modules/windows/enums'
+import { Category, SourceType } from '@renderer/pages/general/enums'
+import { useListStore } from '@renderer/pages/general/store/list'
 import { usePageStore } from '@renderer/pages/general/store/page'
 import { di } from '@utilities/di/container'
 import { APP_TOKEN, ARCHIVER_TOKEN, BACKUP_TOKEN, CONFIG_TOKEN, FILES_TOKEN, MESSAGES_TOKEN, MODS_TOKEN, PATHS_TOKEN, SYSTEM_TOKEN } from '@utilities/di/renderer/tokens'
 import type { ItemType, MenuProps } from 'ant-design-vue'
 import { Menu } from 'ant-design-vue'
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, h, nextTick, onMounted, ref } from 'vue'
 import { Settings } from '../settings'
 import { WhatsNew } from '../whats-new'
 import { MENU_LOCALIZATION as texts } from './localization'
@@ -48,6 +70,7 @@ const paths = di.resolve(PATHS_TOKEN)
 const app = di.resolve(APP_TOKEN)
 const backup = di.resolve(BACKUP_TOKEN)
 const archiver = di.resolve(ARCHIVER_TOKEN)
+const appIconUrl = new URL('../../../images/app-icon.svg', import.meta.url).href
 
 const settingsHasBeenOpened = ref(false)
 const settingsIsOpen = ref(false)
@@ -58,12 +81,46 @@ const whatsNewIsOpen = ref(false)
 /** Отсутствует `initial.pak`. */
 const initialNotFound = !config.initialPath
 const { route } = usePageStore()
+const listStore = useListStore()
+const { setCategory, setSource } = listStore
 
 /** Ссылки на медиа ресурсы. */
 const links = {
 	/** github.com. */
-	github: 'https://github.com/OscarD0823/snowrunner'
+	github: 'https://github.com/OscarD0823/snowrunner',
+	releases: 'https://github.com/OscarD0823/snowrunner/releases'
 }
+
+const workspaceItems = computed(() => [
+	{
+		key: 'trucks',
+		label: texts.trucksNav,
+		icon: CarOutlined,
+		active: listStore.category === Category.trucks && listStore.source !== SourceType.edited && listStore.source !== SourceType.mods,
+		onClick: () => openLibrary(Category.trucks, SourceType.all)
+	},
+	{
+		key: 'trailers',
+		label: texts.trailersNav,
+		icon: ContainerOutlined,
+		active: listStore.category === Category.trailers && listStore.source !== SourceType.edited && listStore.source !== SourceType.mods,
+		onClick: () => openLibrary(Category.trailers, SourceType.all)
+	},
+	{
+		key: 'edited',
+		label: texts.editedNav,
+		icon: EditOutlined,
+		active: listStore.source === SourceType.edited,
+		onClick: () => openLibrary(listStore.category, SourceType.edited)
+	},
+	{
+		key: 'mods',
+		label: texts.modsNav,
+		icon: AppstoreAddOutlined,
+		active: listStore.source === SourceType.mods,
+		onClick: () => openLibrary(listStore.category, SourceType.mods)
+	}
+])
 
 /** Элементы меню. */
 const items = computed(() => [
@@ -71,23 +128,27 @@ const items = computed(() => [
 	{
 		key: 'file_menu',
 		label: texts.fileMenuLabel,
+		icon: h(FileOutlined),
 		children: [
 			...inAdvancedMode([
 				{
 					key: 'open_files_folder',
 					label: texts.openFilesFolderItemLabel,
+					icon: h(FolderOpenOutlined),
 					disabled: initialNotFound,
 					onClick: () => system.openPath(paths.mainTemp)
 				},
 				{
 					key: 'save_files',
 					label: texts.saveFilesItemLabel,
+					icon: h(SaveOutlined),
 					disabled: initialNotFound,
 					onClick: () => updateFiles()
 				},
 				{
 					key: 'unpack_files',
 					label: texts.unpackFilesItemLabel,
+					icon: h(SyncOutlined),
 					disabled: initialNotFound,
 					onClick: () => unpackFiles()
 				},
@@ -96,6 +157,7 @@ const items = computed(() => [
 			{
 				key: 'exit',
 				label: texts.exitMenuItemLabel,
+				icon: h(LogoutOutlined),
 				onClick: () => app.quit()
 			}
 		]
@@ -105,22 +167,26 @@ const items = computed(() => [
 	{
 		key: 'backup_menu',
 		label: texts.backupMenuLabel,
+		icon: h(DatabaseOutlined),
 		disabled: initialNotFound,
 		children: [
 			{
 				key: 'open_backup',
 				label: texts.openButton,
+				icon: h(FolderOpenOutlined),
 				onClick: () => system.openPath(paths.backupFolder)
 			},
 			{ type: 'divider' },
 			{
 				key: 'save_backup',
 				label: texts.saveButton,
+				icon: h(SaveOutlined),
 				onClick: () => backup.save()
 			},
 			{
 				key: 'recover_from_backup',
 				label: texts.restoreMenuItemLabel,
+				icon: h(RollbackOutlined),
 				onClick: () => backup.recoverFromIt()
 			}
 		]
@@ -130,10 +196,12 @@ const items = computed(() => [
 	{
 		key: 'settings_menu',
 		label: texts.settingsMenuLabel,
+		icon: h(SettingOutlined),
 		children: [
 			{
 				key: 'open_settings',
 				label: texts.settingsMenuLabel,
+				icon: h(SettingOutlined),
 				disabled: initialNotFound,
 				onClick: () => openSettings()
 			},
@@ -141,12 +209,14 @@ const items = computed(() => [
 			{
 				key: 'reset_settings',
 				label: texts.resetMenuItemLabel,
+				icon: h(RollbackOutlined),
 				disabled: initialNotFound,
 				onClick: () => app.reset()
 			},
 			{
 				key: 'uninstall_program',
 				label: texts.uninstallMenuItemLabel,
+				icon: h(LogoutOutlined),
 				onClick: async () => {
 					const files = di.resolve(FILES_TOKEN)
 
@@ -161,16 +231,25 @@ const items = computed(() => [
 	{
 		label: texts.helpMenuLabel,
 		key: 'help_menu',
+		icon: h(QuestionCircleOutlined),
 		children: [
 			{
 				key: 'version_info',
 				label: texts.versionMenuItemLabel,
+				icon: h(InfoCircleOutlined),
 				onClick: () => openWhatsNew()
+			},
+			{
+				key: 'releases',
+				label: texts.releasesTitle,
+				icon: h(CloudDownloadOutlined),
+				onClick: () => system.openLink(links.releases)
 			},
 			{ type: 'divider' },
 			{
 				key: 'github',
 				label: texts.githubTitle,
+				icon: h(GithubOutlined),
 				onClick: () => system.openLink(links.github)
 			}
 		]
@@ -190,6 +269,12 @@ function inAdvancedMode(items: ItemType[]) {
 	return config.advancedMode
 		? items
 		: []
+}
+
+function openLibrary(category: Category, source: SourceType) {
+	setCategory(category)
+	setSource(source)
+	route(Page.lists)
 }
 
 async function unpackFiles() {
@@ -233,8 +318,8 @@ function openWhatsNew() {
 .wrapper {
 	display: flex;
 	align-items: center;
-	min-height: 58px;
-	padding: 0 18px;
+	min-height: 66px;
+	padding: 0 14px;
 	background: #111827;
 	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 	box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
@@ -245,22 +330,23 @@ function openWhatsNew() {
 	display: flex;
 	align-items: center;
 	gap: 11px;
-	min-width: 285px;
+	min-width: 248px;
 	color: white;
 	user-select: none;
 }
 
 .brand-mark {
-	display: grid;
-	place-items: center;
-	width: 36px;
-	height: 36px;
-	border-radius: 10px;
-	background: linear-gradient(145deg, #f97316, #ea580c);
-	box-shadow: 0 7px 18px rgba(234, 88, 12, 0.28);
-	font-weight: 800;
-	font-size: 13px;
-	letter-spacing: 0.08em;
+	width: 42px;
+	height: 42px;
+	border-radius: 12px;
+	overflow: hidden;
+	box-shadow: 0 8px 22px rgba(234, 88, 12, 0.22);
+
+	img {
+		display: block;
+		width: 100%;
+		height: 100%;
+	}
 }
 
 .brand-copy {
@@ -280,29 +366,85 @@ function openWhatsNew() {
 	}
 }
 
+.workspace-navigation {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 5px;
+	background: rgba(255, 255, 255, 0.045);
+	border: 1px solid rgba(255, 255, 255, 0.07);
+	border-radius: 12px;
+
+	&__item {
+		display: inline-flex;
+		align-items: center;
+		gap: 7px;
+		height: 38px;
+		padding: 0 12px;
+		color: #aebbd0;
+		background: transparent;
+		border: 0;
+		border-radius: 8px;
+		font: inherit;
+		font-size: 12px;
+		font-weight: 650;
+		cursor: pointer;
+		transition: color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
+
+		&:hover,
+		&:focus-visible {
+			color: white;
+			background: rgba(255, 255, 255, 0.1);
+			outline: none;
+		}
+
+		&--active {
+			color: white;
+			background: linear-gradient(145deg, #f97316, #ea580c);
+			box-shadow: 0 5px 14px rgba(234, 88, 12, 0.24);
+		}
+
+		:deep(.anticon) {
+			font-size: 16px;
+		}
+	}
+}
+
 .menu {
-	flex: 1;
+	flex: 0 1 auto;
+	min-width: 300px;
+	margin-left: auto;
 	justify-content: flex-end;
 	background: transparent;
 	color: #cbd5e1;
-	line-height: 58px;
+	line-height: 66px;
 
-	li {
+	:deep(.ant-menu-submenu),
+	:deep(.ant-menu-item) {
 		padding: 0 13px !important;
 		color: #cbd5e1 !important;
 
-		&:hover span,
-		&:global(.ant-menu-submenu-active) span {
+		.ant-menu-title-content,
+		.anticon {
+			color: inherit !important;
+			opacity: 1 !important;
+			visibility: visible !important;
+		}
+
+		&:hover,
+		&.ant-menu-submenu-active,
+		&.ant-menu-submenu-open {
 			color: white;
 		}
 
 		&:hover::after,
-		&:global(.ant-menu-submenu-active::after) {
+		&.ant-menu-submenu-active::after,
+		&.ant-menu-submenu-open::after {
 			border-bottom: 2px solid #f97316 !important;
 		}
 
-		:global(.ant-menu-submenu-title) {
-			height: 58px;
+		.ant-menu-submenu-title {
+			height: 66px;
 			display: flex !important;
 			justify-content: center;
 			align-items: center;
@@ -310,12 +452,34 @@ function openWhatsNew() {
 	}
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1180px) {
 	.brand {
 		min-width: auto;
 	}
 
-	.brand-copy span {
+	.brand-copy {
+		display: none;
+	}
+
+	.workspace-navigation__item {
+		padding: 0 10px;
+
+		span {
+			display: none;
+		}
+	}
+}
+
+@media (max-width: 820px) {
+	.menu {
+		min-width: 0;
+
+		:deep(.ant-menu-title-content) {
+			display: none;
+		}
+	}
+
+	.workspace-navigation__item:nth-child(n + 3) {
 		display: none;
 	}
 }
