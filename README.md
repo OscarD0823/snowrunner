@@ -6,7 +6,7 @@ La aplicación permite explorar vehículos y remolques, cambiar sus parámetros 
 
 ## Estado del proyecto
 
-La versión `2.0.0` incluye:
+La versión `2.0.1` incluye:
 
 - interfaz y descripciones técnicas completas en español;
 - asistente inicial que explica cómo localizar `initial.pak`;

@@ -62,7 +62,9 @@ export class Updates implements IMainUpdates {
 			await app.clearTemp()
 			await dirs.updateTemp.make()
 
-			const setupName = 'SnowRunner Studio Setup.exe'
+			// softprops/action-gh-release normaliza los espacios del nombre real
+			// del archivo a puntos, aunque conserve la etiqueta legible.
+			const setupName = 'SnowRunner.Studio.Setup.exe'
 			const url = `${paths.update}/v${version}/${encodeURIComponent(setupName)}`
 			const file = dirs.updateTemp.file(setupName)
 

@@ -1,7 +1,7 @@
 {
 	"name": "snowrunner-studio-es",
 	"productName": "SnowRunner Studio",
-	"version": "2.0.0",
+	"version": "2.0.1",
 	"description": "Editor visual multilingüe para vehículos, remolques y componentes de SnowRunner.",
 	"type": "module",
 	"repository": {
