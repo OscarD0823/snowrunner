@@ -1,7 +1,7 @@
 /** Работа с обновлениями программы. [public] */
 export interface IPublicUpdates {
 	/** Запустить процесс обновления программы. */
-	updateApp(version: string, portable?: boolean): Promise<void>
+	updateApp(version: string): Promise<void>
 }
 
 /** Работа с обновлениями программы. [renderer] */

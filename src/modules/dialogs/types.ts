@@ -79,6 +79,12 @@ export interface IPublicDialogs {
 	 * @returns Путь к выбранному `.xml` файлу.
 	 */
 	getXML(): string | undefined
+
+	/**
+	 * Abrir una imagen PNG, JPEG o WebP.
+	 * @returns Ruta de la imagen seleccionada.
+	 */
+	getImage(): string | undefined
 }
 
 

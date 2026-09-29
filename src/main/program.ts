@@ -3,7 +3,7 @@ import type { IMainMods } from '@modules/data/modifications/types'
 import { Page, ProgramWindow } from '@modules/windows/enums'
 import type { IResettable } from '@src/types'
 import { di, inject } from '@utilities/di/container'
-import { APP_TOKEN, CHECKS_TOKEN, CONFIG_MANAGER_TOKEN, CONFIG_TOKEN, DLC_TOKEN, EDITED_TOKEN, FAVORITES_TOKEN, GAME_TEXTS_TOKEN, LOADING_TOKEN, MODS_TOKEN, QUIT_PARAMS_TOKEN, SIZES_TOKEN, WINDOWS_TOKEN } from '@utilities/di/main/tokens'
+import { APP_TOKEN, CHECKS_TOKEN, CONFIG_MANAGER_TOKEN, CONFIG_TOKEN, DLC_TOKEN, EDITED_TOKEN, FAVORITES_TOKEN, GAME_TEXTS_TOKEN, IMAGES_TOKEN, LOADING_TOKEN, MODS_TOKEN, QUIT_PARAMS_TOKEN, SIZES_TOKEN, WINDOWS_TOKEN } from '@utilities/di/main/tokens'
 import { app } from 'electron'
 import { BaseProgram } from './base-program'
 import { MAIN_LOCALIZATION } from './localization'
@@ -56,6 +56,11 @@ export class Program extends BaseProgram {
 		await loading.runRequiredStage(this.texts.loadGameTexts, gameTexts.initFromInitial.bind(gameTexts))
 		await loading.runRequiredStage(this.texts.loadDlc, dlc.init.bind(dlc))
 		await loading.runRequiredStage(this.texts.loadMods, this.mods.procMods.bind(this.mods))
+		// La extracción es local y no debe impedir abrir el editor si una versión
+		// futura del juego cambia el contenedor gráfico.
+		await di.resolve(IMAGES_TOKEN).prepare(config.initialPath!).catch(error => {
+			console.warn('No se pudieron preparar las carátulas originales.', error)
+		})
 		windows.generalWindow!.route(Page.lists)
 	}
 

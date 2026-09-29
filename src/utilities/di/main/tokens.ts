@@ -13,6 +13,7 @@ import type { IEnv } from '@modules/env/types'
 import type { IMainEpf } from '@modules/epf/types'
 import type { IDirs, IFiles } from '@modules/files/types'
 import type { IMainGameTexts } from '@modules/game-texts/types'
+import type { IMainImages } from '@modules/images/types'
 import type { IMainLoading } from '@modules/loading/types'
 import type { IMainMessages } from '@modules/messages/types'
 import type { IMainPathsManager, IPaths } from '@modules/paths/types'
@@ -76,6 +77,9 @@ export const DIRS_TOKEN = new InjectionToken<ConstructorOf<IDirs>>('IDirs')
 
 /** {@link IMainGameTexts} */
 export const GAME_TEXTS_TOKEN = new InjectionToken<ConstructorOf<IMainGameTexts>>('IMainGameTexts')
+
+/** {@link IMainImages} */
+export const IMAGES_TOKEN = new InjectionToken<ConstructorOf<IMainImages>>('IMainImages')
 
 /** {@link IMainLoading} */
 export const LOADING_TOKEN = new InjectionToken<ConstructorOf<IMainLoading>>('IMainLoading')

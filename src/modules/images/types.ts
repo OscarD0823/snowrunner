@@ -33,4 +33,18 @@ export interface IImages {
 	 * @returns Путь в папке `images`.
 	 */
 	getImagePath(pathInImagesFolder: string): string
+
+	/** Elegir una carátula local para un elemento sin imagen oficial. */
+	chooseCustom(category: Category, file: IFile): Promise<string | undefined>
+
+	/** Quitar la carátula local asociada a un elemento. */
+	removeCustom(category: Category, file: IFile): Promise<void>
+
+	/** Indica si el elemento tiene una carátula elegida por el usuario. */
+	hasCustom(category: Category, file: IFile): boolean
+}
+
+/** Preparación de carátulas originales. [main] */
+export interface IMainImages {
+	prepare(initialPath: string): Promise<Record<string, string>>
 }

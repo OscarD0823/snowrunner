@@ -80,6 +80,20 @@ export const LISTS_LOCALIZATION = loadLocalization(new Localization({
 		.de('Aus Favoriten entfernen')
 		.ch('从收藏夹中删除'),
 
+	chooseImage: new LocalizationStrings()
+		.es('Elegir imagen')
+		.en('Choose image')
+		.ru('Выбрать изображение')
+		.de('Bild auswählen')
+		.ch('选择图片'),
+
+	removeImage: new LocalizationStrings()
+		.es('Quitar imagen elegida')
+		.en('Remove chosen image')
+		.ru('Удалить выбранное изображение')
+		.de('Ausgewähltes Bild entfernen')
+		.ch('移除所选图片'),
+
 	manualMod: new LocalizationStrings()
 		.ru('Выбрать .pak')
 		.en('Select .pak')

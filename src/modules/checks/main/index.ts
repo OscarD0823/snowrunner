@@ -105,7 +105,12 @@ export class Checks implements IMainChecks {
 
 			const paths = di.resolve(PATHS_TOKEN)
 
-			get(paths.publicInfo, response => {
+			get(paths.publicInfo, {
+				headers: {
+					Accept: 'application/vnd.github+json',
+					'User-Agent': 'SnowRunner-Studio'
+				}
+			}, response => {
 				let rawData = ''
 
 				response
@@ -114,11 +119,10 @@ export class Checks implements IMainChecks {
 					.on('end', async () => {
 						const data: IPubFile = JSON.parse(rawData)
 						const version = config.version
-						const hasNewVersion = version < data.latestVersion
-						const isBetaNewVersion = version.includes('-beta') && version.split('-beta')[0] === data.latestVersion
+						const latestVersion = data.tag_name.replace(/^v/i, '')
 
-						resolve(hasNewVersion || isBetaNewVersion
-							? data.latestVersion
+						resolve(this.isNewerVersion(latestVersion, version)
+							? latestVersion
 							: undefined
 						)
 					})
@@ -128,6 +132,19 @@ export class Checks implements IMainChecks {
 		})
 
 		return promise
+	}
+
+	private isNewerVersion(candidate: string, current: string) {
+		const candidateParts = candidate.split('-')[0].split('.').map(part => Number.parseInt(part, 10) || 0)
+		const currentParts = current.split('-')[0].split('.').map(part => Number.parseInt(part, 10) || 0)
+		const length = Math.max(candidateParts.length, currentParts.length)
+
+		for (let index = 0; index < length; index++) {
+			const difference = (candidateParts[index] ?? 0) - (currentParts[index] ?? 0)
+			if (difference !== 0) return difference > 0
+		}
+
+		return current.includes('-') && !candidate.includes('-')
 	}
 
 	/**

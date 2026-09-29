@@ -51,7 +51,7 @@ export class Updates implements IMainUpdates {
 		return promise
 	}
 
-	async updateApp(version: string, portable = false) {
+	async updateApp(version: string) {
 		this.loading.init(this.texts.downloading)
 
 		try {
@@ -62,17 +62,13 @@ export class Updates implements IMainUpdates {
 			await app.clearTemp()
 			await dirs.updateTemp.make()
 
-			const postfix = portable
-				? '.rar'
-				: '.exe'
-			const url = `${paths.update}/v${version}/SnowRunnerXMLEditor${postfix}`
-			const file = dirs.updateTemp.file(`SnowRunnerXMLEditor${postfix}`)
+			const setupName = 'SnowRunner Studio Setup.exe'
+			const url = `${paths.update}/v${version}/${encodeURIComponent(setupName)}`
+			const file = dirs.updateTemp.file(setupName)
 
 			await this.download(url, file.path)
 
-			if (portable) {
-				shell.showItemInFolder(file.path)
-			} else if (await shell.openPath(file.path)) {
+			if (await shell.openPath(file.path)) {
 				shell.showItemInFolder(file.path)
 			}
 

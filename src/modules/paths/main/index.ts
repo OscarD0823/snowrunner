@@ -11,9 +11,6 @@ export class Paths implements IMainPathsManager {
 	/** URL репозитория. */
 	private readonly REPOS_URL = 'https://github.com/OscarD0823/snowrunner'
 
-	/** URL github pages репозитория. */
-	private readonly IO_REPOS_URL = 'https://oscard0823.github.io/snowrunner'
-
 	/** Папка, в которой находится текущий исполняемый скрипт. */
 	private readonly dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -23,8 +20,8 @@ export class Paths implements IMainPathsManager {
 		: app.getPath('userData')
 
 	accessor object: IPaths = Object.freeze({
-		publicInfo: `${this.IO_REPOS_URL}/version-info.json`,
-		downloadPage: `${this.IO_REPOS_URL}/download.html`,
+		publicInfo: 'https://api.github.com/repos/OscarD0823/snowrunner/releases/latest',
+		downloadPage: `${this.REPOS_URL}/releases/latest`,
 		update: `${this.REPOS_URL}/releases/download`,
 		root: this.dataRoot,
 		pages: this.resolve('../renderer/src/renderer/pages'),

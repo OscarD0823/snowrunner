@@ -105,6 +105,16 @@ export class Dialogs implements IMainDialogs {
 		})
 	}
 
+	getImage(): string | undefined {
+		return dialog.showOpenDialogSync({
+			properties: ['openFile'],
+			filters: [{
+				name: 'Imágenes',
+				extensions: ['png', 'jpg', 'jpeg', 'webp']
+			}]
+		})?.[0]
+	}
+
 	openDialog<T extends string | string[]>(params: IOpenDialogParams): T | undefined {
 		const {
 			type = DialogType.open,

@@ -38,7 +38,8 @@ export class Config implements IMainConfigManager {
 		useMods: true,
 		openWhatsNew: true,
 		checkUpdates: true,
-		optimizeUnpack: false
+		optimizeUnpack: false,
+		customImages: {}
 	}
 
 	/** Стандартное значение конфигурации в `dev` режиме. */

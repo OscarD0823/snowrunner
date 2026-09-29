@@ -266,6 +266,18 @@ const contextMenuItems = computed(() => [
 		onClick: toggleFav
 	},
 	{
+		label: texts.chooseImage,
+		key: 'choose-image',
+		onClick: chooseImage
+	},
+	...(images.hasCustom(category.value, file.value)
+		? [{
+			label: texts.removeImage,
+			key: 'remove-image',
+			onClick: removeImage
+		}]
+		: []),
+	{
 		label: texts.export,
 		key: 'export',
 		onClick: exportFile
@@ -311,6 +323,16 @@ function openEditor() {
 
 function toggleFav() {
 	toggleFavorite(file.value)
+}
+
+async function chooseImage() {
+	const chosen = await images.chooseCustom(category.value, file.value)
+	if (chosen) imgSRC.value = chosen
+}
+
+async function removeImage() {
+	await images.removeCustom(category.value, file.value)
+	if (xml.value) imgSRC.value = await images.getSrc(category.value, file.value, xml.value)
 }
 
 function useDefaultImage() {

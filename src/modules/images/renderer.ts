@@ -1,13 +1,18 @@
+import { initMain, mainMethod } from '@bridge/renderer'
 import type { Mods } from '@modules/data/modifications/renderer'
 import type { IDirs, IFile } from '@modules/files/renderer'
 import type { TruckXML } from '@modules/xml/renderer'
 import type { Category } from '@renderer/pages/general/enums'
 import { di, inject } from '@utilities/di/container'
-import { APP_TOKEN, DIRS_TOKEN, MODS_TOKEN } from '@utilities/di/renderer/tokens'
+import { APP_TOKEN, CONFIG_MANAGER_TOKEN, CONFIG_TOKEN, DIALOGS_TOKEN, DIRS_TOKEN, MODS_TOKEN } from '@utilities/di/renderer/tokens'
+import type { Images as MainImages } from './main'
 import type { IImages } from './types'
 
 /** Работа с картинками. [renderer] */
+@initMain()
 export class Images implements IImages {
+	@mainMethod()
+	private prepare!: MainImages['prepare']
 	/** Модификации игры. */
 	@inject(MODS_TOKEN)
 	private readonly mods!: Mods
@@ -19,7 +24,13 @@ export class Images implements IImages {
 	/** Encontradas correctamente; evita volver a recorrer mods grandes. */
 	private readonly modImages = new Map<string, string>()
 
+	/** Carátulas leídas de gfx.pak, indexadas por UiIcon328x458. */
+	private gameImages?: Promise<Record<string, string>>
+
 	async getSrc(category: Category, file: IFile, xml: TruckXML): Promise<string> {
+		const custom = di.resolve(CONFIG_TOKEN).customImages[this.customKey(category, file)]
+		if (custom) return this.toFileUrl(custom)
+
 		const images = this.dirs.newDir(this.getImagePath(category))
 		const image = images.file(`${file.name}.webp`)
 		const defaultImage = images.file('default.webp')
@@ -33,9 +44,31 @@ export class Images implements IImages {
 				: defaultImage.path
 		}
 
+		const shopReference = xml.GameData?.UiDesc?.UiIcon328x458?.trim().toLowerCase()
+		if (shopReference) {
+			const extracted = await this.getGameImages()
+			const extractedPath = extracted[shopReference]
+
+			if (extractedPath) return this.toFileUrl(extractedPath)
+		}
+
 		return await this.imageExists(image)
 			? image.path
 			: defaultImage.path
+	}
+
+	private async getGameImages() {
+		if (!this.gameImages) {
+			const config = di.resolve(CONFIG_TOKEN)
+			this.gameImages = config.initialPath
+				? this.prepare(config.initialPath).catch(error => {
+					console.warn('No se pudieron extraer las carátulas originales.', error)
+					return {}
+				})
+				: Promise.resolve({})
+		}
+
+		return this.gameImages
 	}
 
 	getDefault(category: Category): string {
@@ -53,6 +86,30 @@ export class Images implements IImages {
 			: '..'
 
 		return `${base}/images/${pathInImagesFolder}`
+	}
+
+	async chooseCustom(category: Category, file: IFile) {
+		const path = di.resolve(DIALOGS_TOKEN).getImage()
+		if (!path) return
+
+		const config = di.resolve(CONFIG_TOKEN)
+		config.customImages[this.customKey(category, file)] = path
+		await di.resolve(CONFIG_MANAGER_TOKEN).save()
+		return this.toFileUrl(path)
+	}
+
+	async removeCustom(category: Category, file: IFile) {
+		const config = di.resolve(CONFIG_TOKEN)
+		delete config.customImages[this.customKey(category, file)]
+		await di.resolve(CONFIG_MANAGER_TOKEN).save()
+	}
+
+	hasCustom(category: Category, file: IFile) {
+		return Boolean(di.resolve(CONFIG_TOKEN).customImages[this.customKey(category, file)])
+	}
+
+	private customKey(category: Category, file: IFile) {
+		return `${category}:${file.path.toLowerCase()}`
 	}
 
 	/**

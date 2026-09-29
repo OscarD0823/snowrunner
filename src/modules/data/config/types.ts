@@ -29,6 +29,9 @@ export interface IConfig {
 
 	/** Оптимизировать распаковку. */
 	optimizeUnpack: boolean
+
+	/** Imágenes elegidas por el usuario para vehículos sin carátula oficial. */
+	customImages: Record<string, string>
 }
 
 /** Работа с конфигурацией программы. [main] */

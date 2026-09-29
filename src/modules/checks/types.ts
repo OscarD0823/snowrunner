@@ -1,7 +1,7 @@
 /** Публичный файл для обновления. */
 export interface IPubFile {
-	/** Последняя доступная версия программы. */
-	latestVersion: string
+	/** Etiqueta de la última publicación en GitHub. */
+	tag_name: string
 }
 
 /** Разного рода проверки. [main] */

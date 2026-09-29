@@ -25,4 +25,7 @@ export class Dialogs implements IRendererDialogs {
 
 	@mainMethod()
 	getXML!: DialogsMain['getXML']
+
+	@mainMethod()
+	getImage!: DialogsMain['getImage']
 }

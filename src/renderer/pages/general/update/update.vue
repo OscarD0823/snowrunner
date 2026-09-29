@@ -16,24 +16,13 @@
         direction="vertical"
         class="buttons"
       >
-        <Dropdown>
-          <template #overlay>
-            <Menu @click="onUpdateClick">
-              <Menu.Item key="installer">
-                {{ texts.installer }}
-              </Menu.Item>
-              <Menu.Item key="portable">
-                {{ texts.portable }}
-              </Menu.Item>
-            </Menu>
-          </template>
-          <Button
-            size="small"
-            type="primary"
-          >
-            {{ texts.update }}<DownOutlined />
-          </Button>
-        </Dropdown>
+        <Button
+          size="small"
+          type="primary"
+          @click="onUpdateClick"
+        >
+          {{ texts.update }}
+        </Button>
         <Button
           size="small"
           type="primary"
@@ -48,11 +37,11 @@
 </template>
 
 <script lang='ts' setup>
-import { CloudDownloadOutlined, DownOutlined } from '@ant-design/icons-vue'
+import { CloudDownloadOutlined } from '@ant-design/icons-vue'
 import { di } from '@utilities/di/container'
 import { CHECKS_TOKEN, CONFIG_TOKEN, UPDATES_TOKEN } from '@utilities/di/renderer/tokens'
-import type { ButtonProps, MenuProps } from 'ant-design-vue'
-import { Alert, Button, Dropdown, Menu, Space } from 'ant-design-vue'
+import type { ButtonProps } from 'ant-design-vue'
+import { Alert, Button, Space } from 'ant-design-vue'
 import { onMounted, ref } from 'vue'
 import { UPDATE_LOCALIZATION as texts } from './localization'
 
@@ -66,14 +55,14 @@ onMounted(async () => {
 	isOpen.value = !!version.value
 })
 
-const onUpdateClick: MenuProps['onClick'] = ({ key }) => {
+const onUpdateClick: ButtonProps['onClick'] = () => {
 	if (!version.value) {
 		return
 	}
 
 	const updates = di.resolve(UPDATES_TOKEN)
 	
-	void updates.updateApp(version.value, key === 'portable')
+	void updates.updateApp(version.value)
 	isOpen.value = false
 }
 
