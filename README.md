@@ -6,7 +6,7 @@ La aplicación permite explorar vehículos y remolques, cambiar sus parámetros 
 
 ## Estado del proyecto
 
-La versión `2.0.1` incluye:
+La versión `2.0.2` incluye:
 
 - interfaz y descripciones técnicas completas en español;
 - asistente inicial que explica cómo localizar `initial.pak`;
@@ -19,6 +19,8 @@ La versión `2.0.1` incluye:
 - imágenes de los mods cuando el paquete incluye una miniatura compatible;
 - extracción local de las carátulas oficiales desde `gfx.pak`, sin descargar imágenes de terceros;
 - asociación manual de PNG, JPEG o WebP para tráileres de misión que no tienen carátula de tienda;
+- título de ventana limpio y diseño adaptable para usar la aplicación en media pantalla;
+- prueba automática de todas las imágenes incluidas y de las carátulas extraídas;
 - instalador de Windows y actualizaciones automáticas mediante GitHub Releases.
 
 Los nombres de vehículos y objetos se leen de los textos incluidos por el propio juego. Cuando SnowRunner no proporciona una cadena en español, se utiliza el nombre inglés.

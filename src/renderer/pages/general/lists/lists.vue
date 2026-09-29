@@ -249,6 +249,7 @@ function toggleFiltersPanel() {
 	background: #eef2f7;
 
 	.library-hero {
+		position: relative;
 		display: grid;
 		grid-template-columns: minmax(280px, 1fr) auto;
 		gap: 18px 28px;
@@ -325,6 +326,31 @@ function toggleFiltersPanel() {
 			&__stats {
 				grid-row: 3;
 				grid-template-columns: repeat(2, minmax(110px, 1fr));
+			}
+		}
+
+		@media (max-width: 700px) {
+			gap: 12px;
+			padding: 16px 14px 13px;
+
+			&__copy {
+				h1 { font-size: 22px; }
+				p { display: none; }
+			}
+
+			&__actions {
+				position: absolute;
+				right: 14px;
+				top: 16px;
+
+				span { display: none; }
+			}
+
+			&__stats {
+				gap: 6px;
+
+				> div { padding: 7px 9px; }
+				strong { font-size: 15px; }
 			}
 		}
 	}
@@ -412,6 +438,15 @@ function toggleFiltersPanel() {
 			&__group--view {
 				margin-left: 0;
 			}
+		}
+
+		@media (max-width: 700px) {
+			gap: 7px;
+			padding: 8px 12px;
+
+			&__label { display: none; }
+			&__group { overflow-x: auto; }
+			:deep(.ant-segmented) { min-width: max-content; }
 		}
 	}
 }

@@ -1,7 +1,7 @@
 {
 	"name": "snowrunner-studio-es",
 	"productName": "SnowRunner Studio",
-	"version": "2.0.1",
+	"version": "2.0.2",
 	"description": "Editor visual multilingüe para vehículos, remolques y componentes de SnowRunner.",
 	"type": "module",
 	"repository": {
@@ -15,6 +15,8 @@
 		"make": "cross-env NODE_ENV=production electron-forge make --platform=win32 --arch=x64",
 		"package-prod": "npm i && cross-env NODE_ENV=production electron-forge package --platform=win32 --arch=x64",
 		"start": "cross-env NODE_ENV=development electron-forge start",
+		"test": "npm run test:images",
+		"test:images": "esbuild scripts/test-images.ts --bundle --platform=node --format=cjs --external:electron --outfile=.vite/test-images.cjs && electron .vite/test-images.cjs",
 		"lint": "eslint src/**",
 		"lint:fix": "npm run lint -- --fix",
 		"check": "tsc --project src/tsconfig.json --noEmit && vue-tsc --project src/tsconfig.json --noEmit"

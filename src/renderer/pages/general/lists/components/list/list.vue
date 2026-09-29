@@ -95,14 +95,12 @@ function useScrollResetting() {
 
 <style lang='scss' scoped>
 .list {
-	display: flex;
-	justify-content: flex-start;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
 	overflow-y: auto;
 	height: 100%;
 	align-content: flex-start;
 	flex-grow: 1;
-	flex-direction: row;
-	flex-wrap: wrap;
 	will-change: auto;
 	gap: 16px;
 	padding: 18px 20px 28px;
@@ -128,6 +126,7 @@ function useScrollResetting() {
 	align-items: center;
 	justify-content: space-between;
 	width: 100%;
+	grid-column: 1 / -1;
 	color: #64748b;
 	font-size: 12px;
 
@@ -144,6 +143,7 @@ function useScrollResetting() {
 }
 
 .mods-button-cont {
+	grid-column: 1 / -1;
 	text-align: center;
 }
 
@@ -160,6 +160,15 @@ function useScrollResetting() {
 	display: grid;
 	place-items: center;
 	width: 100%;
+	grid-column: 1 / -1;
 	min-height: 240px;
+}
+
+@media (max-width: 700px) {
+	.list {
+		grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+		gap: 10px;
+		padding: 12px;
+	}
 }
 </style>

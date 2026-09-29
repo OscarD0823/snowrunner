@@ -13,8 +13,8 @@ export function getGeneralWindow() {
 		devURL: getDevPage('general'),
 		width: 1180,
 		height: 760,
-		minWidth: 800,
-		minHeight: 630,
+		minWidth: 600,
+		minHeight: 520,
 
 		async create(superCreate) {
 			const win = await superCreate()

@@ -190,5 +190,10 @@ const truckTypes = computed<SelectProps['options']>(() => [
 	@media (max-width: 900px) {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
+
+	@media (max-width: 620px) {
+		gap: 9px;
+		padding: 10px 12px 12px;
+	}
 }
 </style>

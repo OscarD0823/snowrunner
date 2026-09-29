@@ -359,7 +359,7 @@ function useDefaultImage() {
 <style lang='scss' scoped>
 .card {
 	box-sizing: border-box;
-	width: 230px;
+	width: 100%;
 	min-height: 375px;
 	margin: 0;
 	border: 1px solid #dbe3ec;
@@ -381,12 +381,15 @@ function useDefaultImage() {
 	}
 
 	:deep(.ant-card-cover img) {
+		width: 100%;
+		height: auto;
+		aspect-ratio: 23 / 30;
 		object-fit: contain;
 	}
 
 	&-container {
+		width: 100%;
 		height: fit-content;
-		flex: 0 0 auto;
 
 		.row {
 			display: flex;

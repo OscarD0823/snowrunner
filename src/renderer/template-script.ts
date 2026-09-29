@@ -1,5 +1,5 @@
 import { di } from '@utilities/di/container'
-import { APP_TOKEN, CONFIG_TOKEN, MESSAGES_TOKEN } from '@utilities/di/renderer/tokens'
+import { APP_TOKEN, MESSAGES_TOKEN } from '@utilities/di/renderer/tokens'
 
 /** Шаблон. */
 export class Template {
@@ -13,9 +13,7 @@ export class Template {
 
 	/** Изменить заголовок. */
 	changeTitle() {
-		const config = di.resolve(CONFIG_TOKEN)
-
-		document.title = `SnowRunner Studio v${config.version}`
+		document.title = 'SnowRunner Studio'
 	}
 
 	/** Отследить нажатие горячих клавиш. */

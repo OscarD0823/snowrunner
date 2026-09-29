@@ -86,6 +86,7 @@ typings/
 
 # Electron-Forge
 out
+out-*/
 
 # program backup
 src/backups/

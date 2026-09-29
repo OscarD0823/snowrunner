@@ -2,7 +2,7 @@
 
 SnowRunner Studio is a multilingual visual editor for SnowRunner vehicles, trailers, and components. It keeps trucks and trailers in separate libraries, explains editable values, creates backups, and writes changes back to `initial.pak`.
 
-Version `2.0.1` also extracts official vehicle shop cards from the locally installed `gfx.pak`. Mission trailers without an official `UiIcon328x458` can be assigned a local PNG, JPEG, or WebP image from their context menu. Mod thumbnails are detected from the mod package when available.
+Version `2.0.2` extracts official vehicle shop cards from the locally installed `gfx.pak`, adapts the interface for split-screen use, and keeps the window title free of version text. Mission trailers without an official `UiIcon328x458` can be assigned a local PNG, JPEG, or WebP image from their context menu. Mod thumbnails are detected from the mod package when available.
 
 ## Development
 

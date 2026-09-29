@@ -472,6 +472,7 @@ function openWhatsNew() {
 
 @media (max-width: 820px) {
 	.menu {
+		flex: 1 1 auto;
 		min-width: 0;
 
 		:deep(.ant-menu-title-content) {
@@ -479,8 +480,46 @@ function openWhatsNew() {
 		}
 	}
 
-	.workspace-navigation__item:nth-child(n + 3) {
-		display: none;
+	.workspace-navigation__item {
+		width: 38px;
+		padding: 0;
+		justify-content: center;
+	}
+}
+
+@media (max-width: 680px) {
+	.wrapper {
+		min-height: 58px;
+		padding: 0 8px;
+		gap: 7px;
+	}
+
+	.brand-mark {
+		width: 36px;
+		height: 36px;
+	}
+
+	.workspace-navigation {
+		gap: 2px;
+		padding: 3px;
+	}
+
+	.workspace-navigation__item {
+		width: 34px;
+		height: 34px;
+	}
+
+	.menu {
+		line-height: 58px;
+
+		:deep(.ant-menu-submenu),
+		:deep(.ant-menu-item) {
+			padding: 0 8px !important;
+
+			.ant-menu-submenu-title {
+				height: 58px;
+			}
+		}
 	}
 }
 </style>

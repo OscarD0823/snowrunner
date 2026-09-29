@@ -23,6 +23,7 @@ class ForgeConfig {
 	 */
 	getConfig() {
 		return {
+			outDir: process.env.SNOWRUNNER_BUILD_OUT || 'out',
 			packagerConfig: {
 				overwrite: true,
 				executableName: 'SnowRunner Studio',
