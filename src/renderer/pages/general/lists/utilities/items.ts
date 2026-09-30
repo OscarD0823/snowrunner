@@ -1,7 +1,7 @@
 import { TruckFileType, TruckXML } from '@modules/xml/renderer'
 import { Category, SourceType } from '../../enums'
 
-import type { IFile } from '@modules/files/renderer'
+import type { IDir, IFile } from '@modules/files/renderer'
 import { di } from '@utilities/di/container'
 import { CONFIG_TOKEN, DIRS_TOKEN, DLC_TOKEN, MODS_TOKEN } from '@utilities/di/renderer/tokens'
 
@@ -23,27 +23,24 @@ export class ItemsUtils {
 	}
 
 	private async filterByCategory(array: IFile[], category: Category): Promise<IFile[]> {
-		const result: IFile[] = []
-
-		for (const file of array) {
+		const classified = await Promise.all(array.map(async file => {
 			const xml = await TruckXML.from(file)
 
 			if (!xml?.exists()) {
-				continue
+				return
 			}
 
 			const normalizedPath = file.path.replaceAll('\\', '/').toLowerCase()
 			const isTrailer = normalizedPath.includes('/trucks/trailers/')
 				|| xml.Type === TruckFileType.trailer
 
-			if ((category === Category.trailers && isTrailer)
+			return (category === Category.trailers && isTrailer)
 				|| (category === Category.trucks && !isTrailer)
-			) {
-				result.push(file)
-			}
-		}
+				? file
+				: undefined
+		}))
 
-		return result
+		return classified.filter((file): file is IFile => Boolean(file))
 	}
 
 	private async getList(category: Category, from?: SourceType): Promise<IFile[]> {
@@ -54,8 +51,7 @@ export class ItemsUtils {
 			for (const dlc of dlcs) {
 				const classes = dlc.dir.dir('classes')
 
-				array.push(...await classes.dir('trucks')
-					.findFiles({ ext: 'xml', recursive: true }))
+				array.push(...await this.findCatalogFiles(classes.dir('trucks')))
 			}
 
 			return this.unique(array)
@@ -70,18 +66,32 @@ export class ItemsUtils {
 			for (const mod of mods) {
 				const modClasses = dirs.modsTemp.dir(mod.name, 'classes')
 
-				array.push(...await modClasses.dir('trucks')
-					.findFiles({ ext: 'xml', recursive: true }))
+				array.push(...await this.findCatalogFiles(modClasses.dir('trucks')))
 			}
 
 			return this.unique(array)
 		}
 
 		if (category === Category.trucks || category === Category.trailers) {
-			return dirs.classes.dir('trucks').findFiles({ ext: 'xml', recursive: true })
+			return this.findCatalogFiles(dirs.classes.dir('trucks'))
 		}
 
 		return []
+	}
+
+	/**
+	 * Los vehículos reales están en la raíz de `classes/trucks` y los
+	 * remolques en `classes/trucks/trailers`. Evitar una búsqueda recursiva
+	 * impide que el catálogo intente abrir cientos de accesorios y archivos
+	 * de personalización como si fueran vehículos.
+	 */
+	private async findCatalogFiles(trucks: IDir) {
+		const [vehicles, trailers] = await Promise.all([
+			trucks.findFiles({ ext: 'xml' }),
+			trucks.dir('trailers').findFiles({ ext: 'xml' })
+		])
+
+		return [...vehicles, ...trailers]
 	}
 
 	private unique(files: IFile[]) {

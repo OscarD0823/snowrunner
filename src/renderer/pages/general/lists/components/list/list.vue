@@ -170,5 +170,15 @@ function useScrollResetting() {
 		gap: 10px;
 		padding: 12px;
 	}
+
+	.list-summary {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: 4px;
+
+		span {
+			display: none;
+		}
+	}
 }
 </style>

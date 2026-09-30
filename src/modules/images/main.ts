@@ -26,7 +26,7 @@ export class Images implements IMainImages {
 		const signature = createHash('sha256')
 			.update(`snowrunner-shop-v1:${gfxStats.size}:${Math.trunc(gfxStats.mtimeMs)}`)
 			.digest('hex')
-		const root = join(this.paths.root, 'game-images', signature)
+		const root = join(this.paths.workspace, 'game-images', signature)
 		const extracted = join(root, 'extracted')
 		const generated = join(root, 'generated')
 		const indexPath = join(root, 'index.json')

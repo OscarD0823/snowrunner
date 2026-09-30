@@ -228,6 +228,40 @@ $parameterMinWidthAddition: calc($parameterMinWidth / 10);
 		justify-content: space-between;
 	}
 }
+
+@media screen and (max-width: 760px) {
+	.parameter {
+		min-width: 100%;
+		padding: 8px 4px;
+		align-items: stretch;
+		flex-direction: column;
+		gap: 8px;
+
+		.label,
+		.content {
+			width: 100%;
+		}
+
+		.label {
+			padding-left: 0;
+			font-weight: 650;
+		}
+
+		.content {
+			align-items: stretch;
+			justify-content: flex-start;
+			text-align: left;
+		}
+
+		.value-guide {
+			align-items: flex-start;
+
+			.recommendations {
+				justify-content: flex-start;
+			}
+		}
+	}
+}
 </style>
 
 <style lang='scss' scoped>

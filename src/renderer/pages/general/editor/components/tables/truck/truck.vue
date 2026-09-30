@@ -301,6 +301,9 @@ function getCompatibleWheelsLabel(nth: number, type?: string) {
 
 <style lang="scss" scoped>
 .editor-section-select {
+	position: sticky;
+	top: -20px;
+	z-index: 5;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -316,6 +319,23 @@ function getCompatibleWheelsLabel(nth: number, type?: string) {
 
 	:deep(.ant-segmented-item-selected) {
 		color: #c2410c;
+	}
+
+	@media (max-width: 760px) {
+		top: -12px;
+		align-items: stretch;
+		flex-direction: column;
+		gap: 8px;
+		margin-bottom: 10px;
+
+		:deep(.ant-segmented) {
+			width: 100%;
+		}
+
+		:deep(.ant-segmented-group),
+		:deep(.ant-segmented-item) {
+			flex: 1;
+		}
 	}
 }
 </style>

@@ -28,7 +28,10 @@ class ForgeConfig {
 				overwrite: true,
 				executableName: 'SnowRunner Studio',
 				icon: '.vite/favicon.ico',
-				appBundleId: 'com.oscard0823.snowrunnerstudio'
+				appBundleId: 'com.oscard0823.snowrunnerstudio',
+				// El plugin de Vite solo necesita copiar su salida compilada.
+				// Así no entran fuentes, datos temporales ni builds anteriores.
+				ignore: file => Boolean(file) && !file.startsWith('/.vite')
 			},
 			makers: [
 				{

@@ -22,6 +22,10 @@ export const MENU_LOCALIZATION = loadLocalization(new Localization({
 		.es('Mods')
 		.en('Modifications'),
 
+	installationDetected: new LocalizationStrings()
+		.es('Instalación detectada:')
+		.en('Installation detected:'),
+
 	releasesTitle: new LocalizationStrings()
 		.es('Versiones y descargas')
 		.en('Releases and downloads'),

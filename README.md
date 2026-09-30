@@ -6,7 +6,7 @@ La aplicación permite explorar vehículos y remolques, cambiar sus parámetros 
 
 ## Estado del proyecto
 
-La versión `2.0.2` incluye:
+La versión `2.1.0` incluye:
 
 - interfaz y descripciones técnicas completas en español;
 - asistente inicial que explica cómo localizar `initial.pak`;
@@ -20,12 +20,17 @@ La versión `2.0.2` incluye:
 - extracción local de las carátulas oficiales desde `gfx.pak`, sin descargar imágenes de terceros;
 - asociación manual de PNG, JPEG o WebP para tráileres de misión que no tienen carátula de tienda;
 - título de ventana limpio y diseño adaptable para usar la aplicación en media pantalla;
-- prueba automática de todas las imágenes incluidas y de las carátulas extraídas;
+- catálogo compacto inspirado en el flujo de RoadCraft Studio, con idioma, ajustes, navegación y ruta del juego mejor distribuidos;
+- carga acelerada: analiza únicamente los XML reales de vehículos y remolques, sin recorrer accesorios ni personalizaciones;
+- zona de trabajo pesada junto a la instalación del juego, evitando bloqueos en unidades C casi llenas;
+- tarjetas más compactas y equivalencias visuales para variantes de remolques de la misma familia;
+- editor adaptable con campos, valores originales y recomendaciones Poco/Medio/Alto legibles en media pantalla;
+- prueba automática de todas las imágenes, la clasificación instalada y las carátulas oficiales extraídas;
 - instalador de Windows y actualizaciones automáticas mediante GitHub Releases.
 
 Los nombres de vehículos y objetos se leen de los textos incluidos por el propio juego. Cuando SnowRunner no proporciona una cadena en español, se utiliza el nombre inglés.
 
-Las carátulas se regeneran cuando cambia `gfx.pak`. En la instalación comprobada se encontraron 122 símbolos gráficos y las 120 referencias usadas por los XML de vehículos tuvieron coincidencia. Algunos tráileres de misión no declaran `UiIcon328x458`; en esos casos se muestra la imagen predeterminada hasta que el usuario elige una imagen local con clic derecho.
+Las carátulas se regeneran cuando cambia `gfx.pak`. En la instalación comprobada se encontraron 122 símbolos gráficos y las 118 referencias usadas por los XML de vehículos tuvieron coincidencia. Los remolques no declaran `UiIcon328x458`; la aplicación usa su imagen incluida, una variante visual de la misma familia o la imagen predeterminada. El usuario también puede elegir una imagen local con clic derecho.
 
 ## Ejecutar en Windows
 

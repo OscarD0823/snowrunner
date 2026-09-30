@@ -54,6 +54,7 @@ const onBack: PageHeaderProps['onBack'] = props.withBack
 	z-index: 1;
 
 	&-title {
+		max-width: min(420px, 42vw);
 		text-align: left;
 		color: #fafafa;
 		padding: 0;
@@ -61,11 +62,18 @@ const onBack: PageHeaderProps['onBack'] = props.withBack
 		font-size: 18px;
 		font-weight: 650;
 		letter-spacing: 0.01em;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	:global(.ant-page-header-heading-left),
 	:global(.ant-page-header-heading-extra) {
 		margin: 0;
+	}
+
+	:global(.ant-page-header-heading-left) {
+		min-width: 0;
 	}
 
 	:global(.ant-page-header-heading) {
@@ -81,6 +89,20 @@ const onBack: PageHeaderProps['onBack'] = props.withBack
 
 	:global(.ant-page-header-back) {
 		margin-right: 0 !important;
+	}
+
+	@media (max-width: 700px) {
+		min-height: 54px;
+		padding: 0 10px;
+
+		&-title {
+			max-width: 32vw;
+			font-size: 15px;
+		}
+
+		:global(.ant-page-header-heading-extra) {
+			gap: 3px;
+		}
 	}
 }
 </style>

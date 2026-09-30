@@ -153,7 +153,13 @@ div.ant-collapse {
 
 .container,
 .tabs {
-	height: 100%;
+	min-height: 0;
+}
+
+.container {
+	display: flex;
+	flex: 1 1 0;
+	flex-direction: column;
 }
 
 .spin-container {

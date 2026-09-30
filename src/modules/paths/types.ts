@@ -24,6 +24,9 @@ export interface IPaths {
 	/** Папка `app`. */
 	root: string
 
+	/** Carpeta para archivos de trabajo pesados. */
+	workspace: string
+
 	/** Папка с страницами. */
 	pages: string
 

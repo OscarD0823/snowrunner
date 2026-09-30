@@ -34,25 +34,35 @@ const appConstants = di.resolve(APP_CONSTANTS_TOKEN)
 /** Открыто ли модальное окно. */
 const isOpen = defineModel<boolean>({ required: true })
 const info = computed(() => new LocalizationStrings<string[]>()
+	.es([
+		'Catálogo más rápido y compacto, inspirado en RoadCraft Studio',
+		'Nueva distribución de navegación, idioma, ajustes y ruta del juego',
+		'Mejor cobertura de imágenes para variantes de remolques',
+		'Editor adaptable para trabajar cómodamente en media pantalla'
+	])
 	.ru([
-		'Обновлены компоненты программы',
-		'Добавлены картинки новых авто',
-		'Обновлены стандартные параметры'
+		'Более быстрый и компактный каталог',
+		'Обновлена навигация и отображение пути к игре',
+		'Улучшено отображение изображений прицепов',
+		'Редактор адаптирован для разделённого экрана'
 	])
 	.en([
-		'Updated program components',
-		'Added pictures of new cars',
-		'Standard parameters have been updated'
+		'Faster, more compact catalog inspired by RoadCraft Studio',
+		'Redesigned navigation, language, settings and game path layout',
+		'Improved image coverage for trailer variants',
+		'Responsive editor for comfortable split-screen use'
 	])
 	.de([
-		'Programmkomponenten wurden aktualisiert',
-		'Neue Autobilder hinzugefügt',
-		'Standardeinstellungen wurden aktualisiert'
+		'Schnellerer und kompakterer Katalog',
+		'Navigation und Anzeige des Spielpfads wurden überarbeitet',
+		'Bessere Bildabdeckung für Anhängervarianten',
+		'Anpassbarer Editor für geteilte Bildschirme'
 	])
 	.ch([
-		'更新的程序组件',
-		'新增新车图片',
-		'标准参数已更新'
+		'更快、更紧凑的目录',
+		'重新设计了导航和游戏路径显示',
+		'改进了拖车变体的图片覆盖',
+		'编辑器现已适配分屏使用'
 	])
 	.get(config)
 )

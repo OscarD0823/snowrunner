@@ -4,27 +4,10 @@
       v-show="isOpen"
       class="filters"
     >
-      <label class="filter-field">
-        <span>{{ texts.categoryFilter }}</span>
-        <Select
-          class="filter-select"
-          size="large"
-          :options="categories"
-          :value="category"
-          @change="setCategory($event as Category)"
-        />
-      </label>
-      <label class="filter-field">
-        <span>{{ texts.sourceFilter }}</span>
-        <Select
-          class="filter-select"
-          size="large"
-          :options="sources"
-          :value="source"
-          @change="setSource($event as SourceType)"
-        />
-      </label>
-      <label class="filter-field">
+      <label
+        v-if="category === Category.trucks"
+        class="filter-field"
+      >
         <span>{{ texts.typeFilter }}</span>
         <Select
           class="filter-select"
@@ -44,21 +27,24 @@
           :placeholder="texts.searchPlaceholder"
           :value="name"
           @change="setName($event.target.value)"
-        />
+        >
+          <template #prefix>
+            <SearchOutlined />
+          </template>
+        </Input>
       </label>
     </div>
   </VueTransition>
 </template>
 
 <script setup lang="ts">
+import { SearchOutlined } from '@ant-design/icons-vue'
 import { TruckType } from '@modules/xml/renderer'
-import { di } from '@utilities/di/container'
-import { CONFIG_TOKEN } from '@utilities/di/renderer/tokens'
 import type { SelectProps } from 'ant-design-vue'
 import { Input, Select } from 'ant-design-vue'
 import { storeToRefs } from 'pinia'
 import { computed, Transition as VueTransition } from 'vue'
-import { Category, SourceType } from '../../enums'
+import { Category } from '../../enums'
 import { useListStore } from '../../store/list'
 import { LISTS_LOCALIZATION as texts } from '../localization'
 
@@ -69,46 +55,8 @@ export type FiltersProps = {
 defineProps<FiltersProps>()
 
 const listStore = useListStore()
-const { category, source, name, truckType } = storeToRefs(listStore)
-const { setSource, setCategory, setName, setTruckType } = listStore
-
-const categories = computed<SelectProps['options']>(() => [
-	{
-		label: texts.trucksCategory,
-		value: Category.trucks
-	},
-	{
-		label: texts.trailersCategory,
-		value: Category.trailers
-	}
-])
-const sources = computed<SelectProps['options']>(() => [
-	{
-		label: texts.allSource,
-		value: SourceType.all
-	},
-	{
-		label: texts.mainSource,
-		value: SourceType.main
-	},
-	{
-		label: texts.dlcSource,
-		value: SourceType.dlc
-	},
-	{
-		label: texts.modsSource,
-		value: SourceType.mods,
-		disabled: !di.resolve(CONFIG_TOKEN).useMods
-	},
-	{
-		label: texts.favoritesSource,
-		value: SourceType.favorites
-	},
-	{
-		label: texts.editedSource,
-		value: SourceType.edited
-	}
-])
+const { category, name, truckType } = storeToRefs(listStore)
+const { setName, setTruckType } = listStore
 const truckTypes = computed<SelectProps['options']>(() => [
 	{
 		label: texts.allTypes,
@@ -152,7 +100,7 @@ const truckTypes = computed<SelectProps['options']>(() => [
 <style lang="scss" scoped>
 .filters {
 	display: grid;
-	grid-template-columns: repeat(3, minmax(145px, 1fr)) minmax(190px, 1.35fr);
+	grid-template-columns: minmax(180px, 0.65fr) minmax(260px, 1.35fr);
 	gap: 14px;
 	background: #ffffff;
 	border-bottom: 1px solid var(--sr-border);
@@ -180,6 +128,14 @@ const truckTypes = computed<SelectProps['options']>(() => [
 		text-transform: none;
 	}
 
+	.search-field:last-child {
+		grid-column: -2 / -1;
+	}
+
+	.search-field:only-child {
+		grid-column: 1 / -1;
+	}
+
 	:deep(.ant-select-selector),
 	:deep(.ant-input-affix-wrapper) {
 		border-radius: 9px !important;
@@ -188,12 +144,17 @@ const truckTypes = computed<SelectProps['options']>(() => [
 	}
 
 	@media (max-width: 900px) {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-columns: minmax(150px, 0.7fr) minmax(210px, 1.3fr);
 	}
 
 	@media (max-width: 620px) {
+		grid-template-columns: 1fr;
 		gap: 9px;
 		padding: 10px 12px 12px;
+
+		.search-field:last-child {
+			grid-column: auto;
+		}
 	}
 }
 </style>

@@ -1,12 +1,11 @@
 <template>
   <div class="lists">
-    <section class="library-hero">
-      <div class="library-hero__copy">
-        <span>{{ texts.workspaceLabel }}</span>
+    <section class="library-heading">
+      <div class="library-heading__title">
         <h1>{{ category === Category.trucks ? texts.trucksListTitle : texts.trailersListTitle }}</h1>
-        <p>{{ texts.libraryDescription }}</p>
+        <span>{{ files[SourceType.all].length }} {{ texts.resultCount }}</span>
       </div>
-      <div class="library-hero__actions">
+      <div class="library-heading__actions">
         <Tooltip :title="texts.rescanButton">
           <Button
             class="rescan-button"
@@ -29,35 +28,9 @@
           </Button>
         </Tooltip>
       </div>
-      <div class="library-hero__stats">
-        <div>
-          <strong>{{ files[SourceType.all].length }}</strong>
-          <span>{{ texts.resultCount }}</span>
-        </div>
-        <div>
-          <strong>{{ files[SourceType.dlc].length }}</strong>
-          <span>{{ texts.dlcSource }}</span>
-        </div>
-        <div>
-          <strong>{{ files[SourceType.mods].length }}</strong>
-          <span>{{ texts.modsSource }}</span>
-        </div>
-        <div>
-          <strong>{{ files[SourceType.edited].length }}</strong>
-          <span>{{ texts.editedSource }}</span>
-        </div>
-      </div>
     </section>
 
     <div class="quick-sections">
-      <div class="quick-sections__group">
-        <span class="quick-sections__label">{{ texts.contentSections }}</span>
-        <Segmented
-          :value="category"
-          :options="categorySections"
-          @change="setCategory($event as Category)"
-        />
-      </div>
       <div class="quick-sections__group">
         <span class="quick-sections__label">{{ texts.librarySections }}</span>
         <Segmented
@@ -106,15 +79,12 @@ import { ItemsUtils } from './utilities/items'
 const app = di.resolve(APP_TOKEN)
 const listStore = useListStore()
 const { files, category, listMode, source } = storeToRefs(listStore)
-const { clearFiles, setCategory, setListMode, setSource } = listStore
-
-const categorySections = [
-	{ label: texts.trucksCategory, value: Category.trucks },
-	{ label: texts.trailersCategory, value: Category.trailers }
-]
+const { clearFiles, setListMode, setSource } = listStore
 
 const quickSections = computed(() => [
 	{ label: `${texts.allSource} (${files.value[SourceType.all].length})`, value: SourceType.all },
+	{ label: `${texts.mainSource} (${files.value[SourceType.main].length})`, value: SourceType.main },
+	{ label: `${texts.dlcSource} (${files.value[SourceType.dlc].length})`, value: SourceType.dlc },
 	{ label: `${texts.editedSource} (${files.value[SourceType.edited].length})`, value: SourceType.edited },
 	{ label: `${texts.favoritesSource} (${files.value[SourceType.favorites].length})`, value: SourceType.favorites },
 	{ label: `${texts.modsSource} (${files.value[SourceType.mods].length})`, value: SourceType.mods }
@@ -248,110 +218,55 @@ function toggleFiltersPanel() {
 	min-height: 0;
 	background: #eef2f7;
 
-	.library-hero {
-		position: relative;
-		display: grid;
-		grid-template-columns: minmax(280px, 1fr) auto;
-		gap: 18px 28px;
-		padding: 24px 24px 18px;
-		background:
-			radial-gradient(circle at 85% 15%, rgba(249, 115, 22, 0.28), transparent 31%),
-			linear-gradient(125deg, #0f172a 0%, #172554 58%, #1e293b 100%);
-		color: white;
+	.library-heading {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+		min-height: 62px;
+		padding: 10px 20px;
+		background: #f9fbfc;
+		border-bottom: 1px solid var(--sr-border);
 
-		&__copy {
-			span {
-				color: #fb923c;
-				font-size: 11px;
-				font-weight: 800;
-				letter-spacing: 0.13em;
-				text-transform: uppercase;
-			}
+		&__title {
+			display: flex;
+			align-items: baseline;
+			gap: 10px;
+			min-width: 0;
 
 			h1 {
-				margin: 5px 0 4px;
-				font-size: 27px;
-				line-height: 1.15;
+				margin: 0;
+				color: #172033;
+				font-size: 21px;
+				line-height: 1.2;
 			}
 
-			p {
-				max-width: 620px;
-				margin: 0;
-				color: #cbd5e1;
-				font-size: 13px;
-				line-height: 1.5;
+			span {
+				color: #64748b;
+				font-size: 11px;
+				white-space: nowrap;
 			}
 		}
 
 		&__actions {
 			display: flex;
-			align-items: flex-start;
+			align-items: center;
 			gap: 8px;
-		}
-
-		&__stats {
-			display: grid;
-			grid-column: 1 / -1;
-			grid-template-columns: repeat(4, minmax(110px, 1fr));
-			gap: 9px;
-
-			> div {
-				display: flex;
-				align-items: baseline;
-				gap: 7px;
-				padding: 9px 12px;
-				background: rgba(255, 255, 255, 0.07);
-				border: 1px solid rgba(255, 255, 255, 0.1);
-				border-radius: 10px;
-			}
-
-			strong {
-				color: #fdba74;
-				font-size: 18px;
-			}
-
-			span {
-				color: #e2e8f0;
-				font-size: 11px;
-			}
-		}
-
-		@media (max-width: 900px) {
-			grid-template-columns: 1fr;
-
-			&__actions {
-				grid-row: 2;
-			}
-
-			&__stats {
-				grid-row: 3;
-				grid-template-columns: repeat(2, minmax(110px, 1fr));
-			}
+			margin-left: auto;
 		}
 
 		@media (max-width: 700px) {
-			gap: 12px;
-			padding: 16px 14px 13px;
+			min-height: 54px;
+			padding: 8px 12px;
 
-			&__copy {
-				h1 { font-size: 22px; }
-				p { display: none; }
+			&__title {
+				align-items: flex-start;
+				flex-direction: column;
+				gap: 2px;
+
+				h1 { font-size: 18px; }
 			}
 
-			&__actions {
-				position: absolute;
-				right: 14px;
-				top: 16px;
-
-				span { display: none; }
-			}
-
-			&__stats {
-				gap: 6px;
-
-				> div { padding: 7px 9px; }
-				strong { font-size: 15px; }
-			}
+			&__actions span { display: none; }
 		}
 	}
 
@@ -360,9 +275,16 @@ function toggleFiltersPanel() {
 		align-items: center;
 		gap: 7px;
 		height: 36px;
-		color: white;
-		background: rgba(255, 255, 255, 0.08);
-		border-color: rgba(255, 255, 255, 0.15);
+		color: #435166;
+		background: white;
+		border-color: #d6dee6;
+
+		&:hover,
+		&:focus-visible {
+			color: #c4520a;
+			background: #fff9f4;
+			border-color: #fb923c;
+		}
 
 		.button-icon {
 			font-size: 16px;

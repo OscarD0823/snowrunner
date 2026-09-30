@@ -1,43 +1,69 @@
 <template>
   <div class="wrapper">
-    <div
-      class="brand"
-      aria-label="SnowRunner Studio"
-    >
-      <div class="brand-mark">
-        <img
-          :src="appIconUrl"
-          alt=""
-        >
-      </div>
-      <div class="brand-copy">
-        <strong>SnowRunner Studio</strong>
-        <span>{{ texts.brandSubtitle }}</span>
-      </div>
-    </div>
-    <nav
-      class="workspace-navigation"
-      :aria-label="texts.brandSubtitle"
-    >
-      <button
-        v-for="item in workspaceItems"
-        :key="item.key"
-        type="button"
-        class="workspace-navigation__item"
-        :class="{ 'workspace-navigation__item--active': item.active }"
-        @click="item.onClick"
+    <header class="topbar">
+      <div
+        class="brand"
+        aria-label="SnowRunner Studio"
       >
-        <component :is="item.icon" />
-        <span>{{ item.label }}</span>
-      </button>
-    </nav>
-    <Menu
-      class="menu"
-      trigger-sub-menu-action="click"
-      mode="horizontal"
-      :selectable="false"
-      :items="items"
-    />
+        <div class="brand-mark">
+          <img
+            :src="appIconUrl"
+            alt=""
+          >
+        </div>
+        <div class="brand-copy">
+          <strong>SnowRunner Studio</strong>
+          <span>{{ texts.brandSubtitle }}</span>
+        </div>
+      </div>
+      <div class="topbar__actions">
+        <Language compact />
+        <Tooltip :title="texts.settingsMenuLabel">
+          <Button
+            class="topbar-button"
+            type="text"
+            :aria-label="texts.settingsMenuLabel"
+            @click="openSettings"
+          >
+            <SettingOutlined />
+          </Button>
+        </Tooltip>
+        <Menu
+          class="menu"
+          trigger-sub-menu-action="click"
+          mode="horizontal"
+          :selectable="false"
+          :items="items"
+        />
+      </div>
+    </header>
+    <section class="workspace-bar">
+      <nav
+        class="workspace-navigation"
+        :aria-label="texts.brandSubtitle"
+      >
+        <button
+          v-for="item in workspaceItems"
+          :key="item.key"
+          type="button"
+          class="workspace-navigation__item"
+          :class="{ 'workspace-navigation__item--active': item.active }"
+          @click="item.onClick"
+        >
+          <component :is="item.icon" />
+          <span>{{ item.label }}</span>
+        </button>
+      </nav>
+      <div
+        v-if="config.initialPath"
+        class="installation-path"
+        :title="config.initialPath"
+      >
+        <span class="installation-path__status" />
+        <strong>{{ texts.installationDetected }}</strong>
+        <span>{{ config.initialPath }}</span>
+      </div>
+    </section>
     <Settings
       v-if="settingsHasBeenOpened"
       v-model="settingsIsOpen"
@@ -58,10 +84,11 @@ import { usePageStore } from '@renderer/pages/general/store/page'
 import { di } from '@utilities/di/container'
 import { APP_TOKEN, ARCHIVER_TOKEN, BACKUP_TOKEN, CONFIG_TOKEN, FILES_TOKEN, MESSAGES_TOKEN, MODS_TOKEN, PATHS_TOKEN, SYSTEM_TOKEN } from '@utilities/di/renderer/tokens'
 import type { ItemType, MenuProps } from 'ant-design-vue'
-import { Menu } from 'ant-design-vue'
+import { Button, Menu, Tooltip } from 'ant-design-vue'
 import { computed, h, nextTick, onMounted, ref } from 'vue'
 import { Settings } from '../settings'
 import { WhatsNew } from '../whats-new'
+import { Language } from '../language'
 import { MENU_LOCALIZATION as texts } from './localization'
 
 const config = di.resolve(CONFIG_TOKEN)
@@ -317,13 +344,27 @@ function openWhatsNew() {
 <style lang='scss' scoped>
 .wrapper {
 	display: flex;
-	align-items: center;
-	min-height: 66px;
-	padding: 0 14px;
-	background: #111827;
-	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+	flex: 0 0 auto;
+	flex-direction: column;
 	box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
 	z-index: 10;
+}
+
+.topbar {
+	display: flex;
+	align-items: center;
+	min-height: 60px;
+	padding: 0 16px;
+	background: #0b1220;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+	&__actions {
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		min-width: 0;
+		margin-left: auto;
+	}
 }
 
 .brand {
@@ -371,8 +412,8 @@ function openWhatsNew() {
 	align-items: center;
 	gap: 4px;
 	padding: 5px;
-	background: rgba(255, 255, 255, 0.045);
-	border: 1px solid rgba(255, 255, 255, 0.07);
+	background: #edf2f6;
+	border: 1px solid #e1e7ed;
 	border-radius: 12px;
 
 	&__item {
@@ -381,7 +422,7 @@ function openWhatsNew() {
 		gap: 7px;
 		height: 38px;
 		padding: 0 12px;
-		color: #aebbd0;
+		color: #536274;
 		background: transparent;
 		border: 0;
 		border-radius: 8px;
@@ -393,8 +434,8 @@ function openWhatsNew() {
 
 		&:hover,
 		&:focus-visible {
-			color: white;
-			background: rgba(255, 255, 255, 0.1);
+			color: #172033;
+			background: white;
 			outline: none;
 		}
 
@@ -410,14 +451,79 @@ function openWhatsNew() {
 	}
 }
 
+.workspace-bar {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	min-height: 56px;
+	padding: 8px 16px;
+	background: rgba(255, 255, 255, 0.97);
+	border-bottom: 1px solid var(--sr-border);
+}
+
+.installation-path {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+	max-width: 520px;
+	height: 38px;
+	margin-left: auto;
+	padding: 0 11px;
+	color: #64748b;
+	background: #f4f7f9;
+	border: 1px solid #e1e7ed;
+	border-radius: 9px;
+	font-size: 11px;
+	white-space: nowrap;
+	overflow: hidden;
+
+	strong {
+		flex: 0 0 auto;
+		color: #334155;
+	}
+
+	span:last-child {
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	&__status {
+		width: 7px;
+		height: 7px;
+		flex: 0 0 auto;
+		background: #34d399;
+		border-radius: 50%;
+		box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.12);
+	}
+}
+
+.topbar-button {
+	display: grid;
+	width: 38px;
+	height: 38px;
+	padding: 0;
+	place-items: center;
+	color: #cbd5e1;
+	background: rgba(255, 255, 255, 0.07);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 9px;
+	font-size: 17px;
+
+	&:hover,
+	&:focus-visible {
+		color: white !important;
+		background: rgba(255, 255, 255, 0.14) !important;
+	}
+}
+
 .menu {
 	flex: 0 1 auto;
-	min-width: 300px;
-	margin-left: auto;
+	min-width: 270px;
 	justify-content: flex-end;
 	background: transparent;
 	color: #cbd5e1;
-	line-height: 66px;
+	line-height: 60px;
 
 	:deep(.ant-menu-submenu),
 	:deep(.ant-menu-item) {
@@ -443,8 +549,8 @@ function openWhatsNew() {
 			border-bottom: 2px solid #f97316 !important;
 		}
 
-		.ant-menu-submenu-title {
-			height: 66px;
+			.ant-menu-submenu-title {
+				height: 60px;
 			display: flex !important;
 			justify-content: center;
 			align-items: center;
@@ -463,16 +569,16 @@ function openWhatsNew() {
 
 	.workspace-navigation__item {
 		padding: 0 10px;
+	}
 
-		span {
-			display: none;
-		}
+	.installation-path strong {
+		display: none;
 	}
 }
 
-@media (max-width: 820px) {
+@media (max-width: 920px) {
 	.menu {
-		flex: 1 1 auto;
+		flex: 0 1 auto;
 		min-width: 0;
 
 		:deep(.ant-menu-title-content) {
@@ -484,12 +590,16 @@ function openWhatsNew() {
 		width: 38px;
 		padding: 0;
 		justify-content: center;
+
+		span {
+			display: none;
+		}
 	}
 }
 
 @media (max-width: 680px) {
-	.wrapper {
-		min-height: 58px;
+	.topbar {
+		min-height: 54px;
 		padding: 0 8px;
 		gap: 7px;
 	}
@@ -504,20 +614,33 @@ function openWhatsNew() {
 		padding: 3px;
 	}
 
+	.workspace-bar {
+		min-height: 48px;
+		padding: 5px 8px;
+	}
+
+	.installation-path {
+		height: 34px;
+
+		span:last-child {
+			display: none;
+		}
+	}
+
 	.workspace-navigation__item {
 		width: 34px;
 		height: 34px;
 	}
 
 	.menu {
-		line-height: 58px;
+		line-height: 54px;
 
 		:deep(.ant-menu-submenu),
 		:deep(.ant-menu-item) {
 			padding: 0 8px !important;
 
 			.ant-menu-submenu-title {
-				height: 58px;
+				height: 54px;
 			}
 		}
 	}

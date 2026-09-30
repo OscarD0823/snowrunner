@@ -20,6 +20,7 @@
         :src="imgSRC"
         :alt="name"
         loading="lazy"
+        decoding="async"
         @error="useDefaultImage"
       >
       <div class="description">
@@ -68,6 +69,7 @@
           :src="imgSRC"
           :alt="name"
           loading="lazy"
+          decoding="async"
           @error="useDefaultImage"
         >
       </template>
@@ -77,24 +79,22 @@
         </template>
         <template #description>
           <div class="card-meta">
-            <Tag v-if="files[SourceType.main].includes(file)">
+            <span v-if="files[SourceType.main].includes(file)">
               {{ texts.mainSource }}
-            </Tag>
-            <Tag
+            </span>
+            <span
               v-else-if="files[SourceType.dlc].includes(file)"
-              color="blue"
             >
               {{ texts.dlcSource }}
-            </Tag>
-            <Tag
+            </span>
+            <span
               v-else-if="files[SourceType.mods].includes(file)"
-              color="purple"
             >
               {{ texts.modsSource }}
-            </Tag>
-            <Tag v-if="texts[`${type}_TYPE`]">
+            </span>
+            <span v-if="texts[`${type}_TYPE`]">
               {{ texts[`${type}_TYPE`] }}
-            </Tag>
+            </span>
           </div>
         </template>
       </Card.Meta>
@@ -360,7 +360,7 @@ function useDefaultImage() {
 .card {
 	box-sizing: border-box;
 	width: 100%;
-	min-height: 375px;
+	min-height: 300px;
 	margin: 0;
 	border: 1px solid #dbe3ec;
 	border-radius: 14px;
@@ -382,8 +382,7 @@ function useDefaultImage() {
 
 	:deep(.ant-card-cover img) {
 		width: 100%;
-		height: auto;
-		aspect-ratio: 23 / 30;
+		height: 224px;
 		object-fit: contain;
 	}
 
@@ -461,18 +460,37 @@ function useDefaultImage() {
 		margin-bottom: 8px;
 		color: #172033;
 		font-size: 14px;
+		font-weight: 700;
+		text-align: left;
+		text-overflow: ellipsis;
 	}
 }
 
 .card-meta {
 	display: flex;
-	justify-content: center;
+	justify-content: flex-start;
 	flex-wrap: wrap;
-	gap: 4px;
+	gap: 5px 9px;
+	color: #64748b;
+	font-size: 10px;
+	font-weight: 650;
+	letter-spacing: 0.025em;
+	text-transform: uppercase;
 
-	:deep(.ant-tag) {
-		margin: 0;
-		font-size: 10px;
+	span + span::before {
+		margin-right: 8px;
+		color: #cbd5e1;
+		content: '•';
+	}
+}
+
+@media (max-width: 700px) {
+	.card {
+		min-height: 270px;
+
+		:deep(.ant-card-cover img) {
+			height: 194px;
+		}
 	}
 }
 

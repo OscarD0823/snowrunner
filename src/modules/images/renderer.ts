@@ -8,6 +8,31 @@ import { APP_TOKEN, CONFIG_MANAGER_TOKEN, CONFIG_TOKEN, DIALOGS_TOKEN, DIRS_TOKE
 import type { Images as MainImages } from './main'
 import type { IImages } from './types'
 
+/**
+ * Variantes que reutilizan la misma carrocería o el mismo tipo de remolque.
+ * SnowRunner no incluye una carátula 328x458 para los remolques; estas
+ * equivalencias evitan mostrar una tarjeta vacía cuando ya existe una imagen
+ * representativa de la misma familia dentro de la aplicación.
+ */
+const TRAILER_IMAGE_FALLBACKS = new Map([
+	['pacific_p16_trailer_log_pole', 'trailer_log_pole'],
+	['scout_trailer_heavy_repair', 'trailer_service_2'],
+	['scout_trailer_light_repair', 'trailer_service_2'],
+	['semitrailer_flatbed_3', 'semitrailer_flatbed_5'],
+	['semitrailer_flatbed_6', 'semitrailer_flatbed_5'],
+	['semitrailer_gooseneck_3', 'semitrailer_gooseneck_4'],
+	['semitrailer_log_double_hinge', 'trailer_log'],
+	['semitrailer_log_double_ls', 'trailer_log'],
+	['semitrailer_stepdeck_plane_02', 'semitrailer_stepdeck_plane_01'],
+	['semitrailer_watertank', 'semitrailer_oiltank'],
+	['trailer_log_medium', 'trailer_log'],
+	['trailer_log_pole_zikz_612h', 'trailer_log_pole'],
+	['trailer_log_short', 'trailer_log'],
+	['trailer_watertank', 'trailer_oiltank'],
+	['train_dlc_17', 'train'],
+	['train_wagons_dlc_17', 'train']
+])
+
 /** Работа с картинками. [renderer] */
 @initMain()
 export class Images implements IImages {
@@ -23,6 +48,8 @@ export class Images implements IImages {
 
 	/** Encontradas correctamente; evita volver a recorrer mods grandes. */
 	private readonly modImages = new Map<string, string>()
+	/** Existencia de imágenes incluidas, compartida entre tarjetas. */
+	private readonly bundledImages = new Map<string, Promise<boolean>>()
 
 	/** Carátulas leídas de gfx.pak, indexadas por UiIcon328x458. */
 	private gameImages?: Promise<Record<string, string>>
@@ -52,9 +79,20 @@ export class Images implements IImages {
 			if (extractedPath) return this.toFileUrl(extractedPath)
 		}
 
-		return await this.imageExists(image)
-			? image.path
-			: defaultImage.path
+		if (await this.bundledImageExists(image)) {
+			return image.path
+		}
+
+		const fallbackName = TRAILER_IMAGE_FALLBACKS.get(file.name.toLowerCase())
+		if (fallbackName) {
+			const fallback = images.file(`${fallbackName}.webp`)
+
+			if (await this.bundledImageExists(fallback)) {
+				return fallback.path
+			}
+		}
+
+		return defaultImage.path
 	}
 
 	private async getGameImages() {
@@ -162,7 +200,7 @@ export class Images implements IImages {
 		}
 
 		const ranked = discovered.toSorted((a, b) => (
-			this.imageRank(a.name, referenceName) - this.imageRank(b.name, referenceName)
+			this.imageRank(a.name, referenceName, file.name) - this.imageRank(b.name, referenceName, file.name)
 		))
 		const best = ranked.at(0)
 
@@ -171,17 +209,25 @@ export class Images implements IImages {
 			: undefined
 	}
 
-	private imageRank(name: string, referenceName?: string) {
+	private imageRank(name: string, referenceName?: string, vehicleName?: string) {
 		const normalized = name.toLowerCase()
+		const comparableName = normalized.replace(/[^a-z0-9]/g, '')
 
 		if (referenceName && normalized === referenceName.toLowerCase()) {
 			return 0
 		}
 
+		let score = 100
+		const comparableVehicle = vehicleName?.toLowerCase().replace(/[^a-z0-9]/g, '')
+
+		if (comparableVehicle && comparableName.includes(comparableVehicle)) {
+			score -= 40
+		}
+
 		const preferred = ['shop', 'preview', 'thumbnail', 'thumb', 'icon', 'logo']
 		const index = preferred.findIndex(word => normalized.includes(word))
 
-		return index >= 0 ? index + 1 : 100
+		return index >= 0 ? score + index : score + preferred.length
 	}
 
 	private rememberModImage(key: string, file: IFile) {
@@ -213,5 +259,16 @@ export class Images implements IImages {
 			image.onerror = () => resolve(false)
 			image.src = file.path
 		})
+	}
+
+	private bundledImageExists(file: IFile) {
+		let result = this.bundledImages.get(file.path)
+
+		if (!result) {
+			result = this.imageExists(file)
+			this.bundledImages.set(file.path, result)
+		}
+
+		return result
 	}
 }

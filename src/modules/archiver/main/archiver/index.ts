@@ -50,7 +50,10 @@ export class WinRAR implements ISystemArchiver {
 		inBackground: '-ibck',
 
 		/** Не паниковать при ошибках. */
-		noErrors: '-inul'
+		noErrors: '-inul',
+
+		/** Перезаписывать существующие файлы без диалогов. */
+		overwrite: '-y'
 	}
 
 	/**
@@ -58,16 +61,15 @@ export class WinRAR implements ISystemArchiver {
 	 * @param isMod Идёт ли работа с модификацией.
 	 * @returns Аргументы запуска.
 	 */
-	private getRunArgs(isMod = false) {
+	private getRunArgs() {
 		const env = di.resolve(ENV_TOKEN)
 
 		return env.debugArchiver
 			? []
 			: [
 				this.flags.inBackground,
-				...isMod
-					? [this.flags.noErrors]
-					: []
+				this.flags.noErrors,
+				this.flags.overwrite
 			]
 	}
 
@@ -122,7 +124,7 @@ export class WinRAR implements ISystemArchiver {
 			archive.path,
 			`@${list}`,
 			this.inner(dir.path),
-			this.getRunArgs(isMod)
+			this.getRunArgs()
 		)
 	}
 
@@ -160,14 +162,18 @@ export class WinRAR implements ISystemArchiver {
 		}
 
 		const execArgs = args.flatMap(value => Array.isArray(value) ? value : [value])
-		const { promise, resolve, reject } = Promise.withResolvers()
+		const { promise, resolve, reject } = Promise.withResolvers<void>()
 
 		execFile(this.exeName, execArgs, { cwd: paths.winrar })
-			.once('close', resolve)
+			.once('close', code => {
+				if (code === 0) {
+					resolve()
+				} else {
+					reject(new ProgramError(ErrorText.winRarCommandError, new Error(`WinRAR exit code: ${code}`), args.join(',')))
+				}
+			})
 			.once('error', error => {
-				reject(error.message)
-
-				throw new ProgramError(ErrorText.winRarCommandError, error, args.join(','))
+				reject(new ProgramError(ErrorText.winRarCommandError, error, args.join(',')))
 			})
 
 		return promise

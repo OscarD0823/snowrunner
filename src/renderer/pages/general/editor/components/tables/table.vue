@@ -34,12 +34,23 @@ defineEmits<ReadyEmits>()
 <style lang='scss' scoped>
 .table {
 	padding: 20px;
-	height: calc(100vh - 150px);
+	min-height: 0;
+	flex: 1 1 0;
 	overflow-y: auto;
 
 	:global(.ant-input),
 	:global(.ant-input-number-input) {
 		width: 150px;
+	}
+
+	@media (max-width: 760px) {
+		padding: 12px;
+
+		:global(.ant-input),
+		:global(.ant-input-number),
+		:global(.ant-input-number-input) {
+			width: 100%;
+		}
 	}
 }
 </style>

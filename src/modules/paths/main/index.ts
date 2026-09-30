@@ -1,4 +1,5 @@
 import { app } from 'electron'
+import { accessSync, constants, existsSync, readFileSync, statfsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -18,12 +19,15 @@ export class Paths implements IMainPathsManager {
 	private readonly dataRoot = process.env.NODE_ENV === 'development'
 		? this.resolve('../../.snowrunner-data')
 		: app.getPath('userData')
+	/** Los XML extraídos pueden ocupar cientos de MB; se guardan junto al juego cuando es posible. */
+	private readonly workspaceRoot = this.getWorkspaceRoot()
 
 	accessor object: IPaths = Object.freeze({
 		publicInfo: 'https://api.github.com/repos/OscarD0823/snowrunner/releases/latest',
 		downloadPage: `${this.REPOS_URL}/releases/latest`,
 		update: `${this.REPOS_URL}/releases/download`,
 		root: this.dataRoot,
+		workspace: this.workspaceRoot,
 		pages: this.resolve('../renderer/src/renderer/pages'),
 		config: this.json('config'),
 		edited: this.json('edited'),
@@ -35,17 +39,17 @@ export class Paths implements IMainPathsManager {
 		backupFolder: this.data('backups'),
 		backupInitial: this.data('backups/initial.pak'),
 		backupInitialWithDate: this.getBackupInitialWithDate(),
-		backupInitialData: this.data('backups/previous_initial'),
+		backupInitialData: this.workspace('backups/previous_initial'),
 		icon: this.resolve('../favicon.ico'),
 		winrar: this.resolve('winrar'),
-		mainTemp: this.data('mainTemp'),
-		modsTemp: this.data('modsTemp'),
-		updateTemp: this.data('updateTemp'),
-		strings: this.data('mainTemp/[strings]'),
+		mainTemp: this.workspace('mainTemp'),
+		modsTemp: this.workspace('modsTemp'),
+		updateTemp: this.workspace('updateTemp'),
+		strings: this.workspace('mainTemp/[strings]'),
 		uninstall: this.resolve('../../../../unins000.exe'),
-		classes: this.data('mainTemp/[media]/classes'),
-		templates: this.data('mainTemp/[media]/_templates'),
-		dlc: this.data('mainTemp/[media]/_dlc')
+		classes: this.workspace('mainTemp/[media]/classes'),
+		templates: this.workspace('mainTemp/[media]/_templates'),
+		dlc: this.workspace('mainTemp/[media]/_dlc')
 	})
 
 	get() {
@@ -73,6 +77,44 @@ export class Paths implements IMainPathsManager {
 	/** Obtener una ruta dentro del almacenamiento persistente. */
 	private data(...paths: string[]) {
 		return join(this.dataRoot, ...paths)
+	}
+
+	private workspace(...paths: string[]) {
+		return join(this.workspaceRoot, ...paths)
+	}
+
+	private getWorkspaceRoot() {
+		if (process.env.NODE_ENV === 'development') {
+			return this.dataRoot
+		}
+
+		const configured = process.env.SNOWRUNNER_WORKSPACE_PATH
+		if (configured) return configured
+
+		try {
+			const configPath = join(this.dataRoot, 'jsons', 'config.json')
+			if (!existsSync(configPath)) return this.dataRoot
+
+			const config = JSON.parse(readFileSync(configPath, 'utf8')) as { initialPath?: string }
+			if (!config.initialPath) return this.dataRoot
+
+			const normalized = config.initialPath.replaceAll('/', '\\')
+			const marker = '\\preload\\paks\\client\\initial.pak'
+			const markerIndex = normalized.toLowerCase().lastIndexOf(marker)
+			const gameRoot = markerIndex >= 0
+				? normalized.slice(0, markerIndex)
+				: dirname(normalized)
+
+			accessSync(gameRoot, constants.W_OK)
+			const disk = statfsSync(gameRoot)
+			const freeBytes = disk.bavail * disk.bsize
+
+			return freeBytes >= 1024 ** 3
+				? join(gameRoot, '.snowrunner-studio')
+				: this.dataRoot
+		} catch {
+			return this.dataRoot
+		}
 	}
 
 	/**
