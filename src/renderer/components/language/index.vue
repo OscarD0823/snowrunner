@@ -1,12 +1,24 @@
 <template>
   <div :class="{ 'language--compact': compact }">
-    <Segmented 
+    <div
       v-if="radioMode"
-      :value="config.lang"
-      :options="options"
-      size="large"
-      @change="changeLang(parseStrToLang(String($event)))"
-    />
+      class="language-grid"
+      role="radiogroup"
+      :aria-label="texts.languageLabel"
+    >
+      <button
+        v-for="option in options"
+        :key="option.value"
+        type="button"
+        class="language-option"
+        :class="{ 'language-option--active': config.lang === option.value }"
+        role="radio"
+        :aria-checked="config.lang === option.value"
+        @click="changeLang(option.value)"
+      >
+        {{ option.label }}
+      </button>
+    </div>
     <template v-else-if="!compact">
       <label
         for="lang-select"
@@ -44,7 +56,7 @@ import { GlobalOutlined } from '@ant-design/icons-vue'
 import { Lang, parseStrToLang } from '@modules/data/config/enums'
 import { di } from '@utilities/di/container'
 import { CONFIG_MANAGER_TOKEN, CONFIG_TOKEN, GAME_TEXTS_TOKEN } from '@utilities/di/renderer/tokens'
-import { Segmented, Select } from 'ant-design-vue'
+import { Select } from 'ant-design-vue'
 import { nextTick } from 'vue'
 import { LANGUAGE_LOCALIZATION as texts } from './localization'
 
@@ -87,8 +99,13 @@ async function changeLang(newLang: Lang) {
 	config.lang = newLang
 	await di.resolve(CONFIG_MANAGER_TOKEN).save()
 	await nextTick()
-	await gameTexts.initFromInitial()
-	await gameTexts.initFromMods()
+
+	// Durante la bienvenida todavía no hay `initial.pak`. El idioma de la
+	// interfaz sí debe cambiar sin intentar leer archivos que aún no existen.
+	if (config.initialPath) {
+		await gameTexts.initFromInitial()
+		await gameTexts.initFromMods()
+	}
 }
 
 </script>
@@ -107,6 +124,43 @@ async function changeLang(newLang: Lang) {
 
 :deep(.ant-select) {
 	width: 260px;
+}
+
+.language-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+	gap: 8px;
+	width: 100%;
+	max-height: min(270px, 38vh);
+	padding: 2px;
+	overflow-y: auto;
+}
+
+.language-option {
+	min-height: 42px;
+	padding: 8px 10px;
+	color: #334155;
+	background: white;
+	border: 1px solid #dbe3ec;
+	border-radius: 9px;
+	font: inherit;
+	font-size: 12px;
+	cursor: pointer;
+	transition: border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+
+	&:hover,
+	&:focus-visible {
+		border-color: #fb923c;
+		outline: none;
+		box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12);
+	}
+
+	&--active {
+		color: white;
+		background: linear-gradient(145deg, #f97316, #ea580c);
+		border-color: #ea580c;
+		box-shadow: 0 5px 14px rgba(234, 88, 12, 0.2);
+	}
 }
 
 .compact-language {

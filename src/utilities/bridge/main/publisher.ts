@@ -12,6 +12,7 @@ export async function publishMain() {
 	const { publishEPF } = await import('@modules/epf/main/publisher')
 	const { publishGameTexts } = await import('@modules/game-texts/main/publisher')
 	const { publishLoading } = await import('@modules/loading/main/publisher')
+	const { publishImages } = await import('@modules/images/main.publisher')
 	const { publishPaths } = await import('@modules/paths/main/publisher')
 	const { publishSystem } = await import('@modules/system/main/publisher')
 	const { publishUpdates } = await import('@modules/updates/main/publisher')
@@ -32,6 +33,7 @@ export async function publishMain() {
 	publishEPF()
 	publishGameTexts()
 	publishLoading()
+	publishImages()
 	publishUpdates()
 	publishWindows()
 }

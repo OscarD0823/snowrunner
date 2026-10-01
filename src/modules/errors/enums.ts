@@ -1,12 +1,6 @@
 /** Тексты ошибок программы. */
 export enum ErrorText {
 	/**
-	 * Ошибка исполнения команды WinRAR.
-	 * 1. Исполняемая команда.
-	 */
-	winRarCommandError = 'Error on run WinRar command "{}"',
-
-	/**
 	 * Ошибка чтения файла.
 	 * 1. Путь к файлу.
 	 */

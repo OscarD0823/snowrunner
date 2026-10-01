@@ -1,61 +1,105 @@
 import { nativeImage } from 'electron'
 import { createHash } from 'node:crypto'
-import { execFile } from 'node:child_process'
-import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
-import { dirname, join, win32 } from 'node:path'
-import { promisify } from 'node:util'
+import { createReadStream } from 'node:fs'
+import { access, mkdir, open as openFile, readFile, readdir, stat, writeFile } from 'node:fs/promises'
+import { basename, dirname, join } from 'node:path'
 import { inject } from '@utilities/di/container'
 import { PATHS_TOKEN } from '@utilities/di/main/tokens'
 import type { IPaths } from '@modules/paths/types'
 import type { IMainImages } from './types'
+import { decodeBC1, decodeBC3, decodeBC4, decodeBC5, decodeBC6H, decodeBC7 } from 'tex-decoder'
+import yauzl from 'yauzl'
 
 type GfxTag = { code: number; data: Buffer }
 
-const execFileAsync = promisify(execFile)
 const BUNDLE_ENTRY = '[gfx]\\gfxbundle.gfxbundle'
 const TEXTURE_PREFIX = '[textures]\\ui\\flash_auto'
+const MAX_COVER_NOISE = 50
+const PCT_DECODERS = new Map<number, {
+	blockSize: number
+	decode: (content: Uint8Array | Buffer, width: number, height: number) => Uint8Array | Buffer
+}>([
+	[0x0c, { decode: decodeBC1, blockSize: 8 }],
+	[0x11, { decode: decodeBC3, blockSize: 16 }],
+	[0x21, { decode: decodeBC5, blockSize: 16 }],
+	[0x24, { decode: decodeBC5, blockSize: 16 }],
+	[0x25, { decode: decodeBC4, blockSize: 8 }],
+	[0x31, { decode: decodeBC6H, blockSize: 16 }],
+	[0x33, { decode: decodeBC7, blockSize: 16 }],
+	[0x34, { decode: decodeBC7, blockSize: 16 }]
+])
+
+class FileRangeReader extends yauzl.RandomAccessReader {
+	constructor(private readonly path: string) {
+		super()
+	}
+
+	override _readStreamForRange(start: number, end: number) {
+		return createReadStream(this.path, { start, end: end - 1 })
+	}
+}
 
 /** Extrae las carátulas originales desde la instalación local del juego. */
 export class Images implements IMainImages {
 	@inject(PATHS_TOKEN)
 	private readonly paths!: IPaths
+	private activePreparation?: { initialPath: string; promise: Promise<Record<string, string>> }
 
-	async prepare(initialPath: string): Promise<Record<string, string>> {
+	prepare(initialPath: string): Promise<Record<string, string>> {
+		if (this.activePreparation?.initialPath === initialPath) {
+			return this.activePreparation.promise
+		}
+
+		const promise = this.prepareImages(initialPath).finally(() => {
+			if (this.activePreparation?.promise === promise) this.activePreparation = undefined
+		})
+		this.activePreparation = { initialPath, promise }
+		return promise
+	}
+
+	private async prepareImages(initialPath: string): Promise<Record<string, string>> {
 		const gfxPath = join(dirname(initialPath), 'gfx.pak')
-		const gfxStats = await stat(gfxPath)
+		const cacheRoot = join(this.paths.workspace, 'game-images')
+		let gfxStats
+
+		try {
+			gfxStats = await stat(gfxPath)
+		} catch (error) {
+			// Si el juego está temporalmente en otra unidad o Steam todavía no ha
+			// montado gfx.pak, se conservan las carátulas válidas ya extraídas.
+			const cached = await this.readLatestCache(cacheRoot)
+			if (cached) return cached
+			throw error
+		}
 		const signature = createHash('sha256')
-			.update(`snowrunner-shop-v1:${gfxStats.size}:${Math.trunc(gfxStats.mtimeMs)}`)
+			.update(`snowrunner-shop-v2:${gfxStats.size}:${Math.trunc(gfxStats.mtimeMs)}`)
 			.digest('hex')
-		const root = join(this.paths.workspace, 'game-images', signature)
-		const extracted = join(root, 'extracted')
+		const root = join(cacheRoot, signature)
 		const generated = join(root, 'generated')
 		const indexPath = join(root, 'index.json')
 
 		try {
-			return JSON.parse(await readFile(indexPath, 'utf8')) as Record<string, string>
+			return await this.readCache(indexPath)
 		} catch {
-			await mkdir(extracted, { recursive: true })
 			await mkdir(generated, { recursive: true })
 		}
 
-		await this.extract(gfxPath, extracted, [BUNDLE_ENTRY])
-		const bundle = await this.readExtracted(extracted, BUNDLE_ENTRY)
+		const bundleEntries = await this.readArchiveFiles(gfxPath, [BUNDLE_ENTRY])
+		const bundle = bundleEntries.get(BUNDLE_ENTRY)!
 		const library = this.readBundleFile(bundle, 'trucks_img_lib.gfx')
 		const symbolTextures = this.readSymbolTextures(library)
-		const textureNames = [...new Set(Object.values(symbolTextures))]
-
-		await this.extract(
-			gfxPath,
-			extracted,
-			textureNames.map(name => `${TEXTURE_PREFIX}\\${name}`)
-		)
+		const textureEntries = [...new Set(Object.values(symbolTextures))]
+			.map(textureName => `${TEXTURE_PREFIX}\\${textureName}`)
+		const textures = await this.readArchiveFiles(gfxPath, textureEntries)
 
 		const result: Record<string, string> = {}
 		for (const [symbol, textureName] of Object.entries(symbolTextures)) {
 			if (!symbol.toLowerCase().startsWith('shopimg')) continue
 
 			const outputPath = join(generated, `${symbol.toLowerCase().replace(/[^a-z0-9_-]/g, '_')}.png`)
-			const png = this.decodePct(await this.readExtracted(extracted, `${TEXTURE_PREFIX}\\${textureName}`))
+			const pct = textures.get(`${TEXTURE_PREFIX}\\${textureName}`)
+			if (!pct) continue
+			const png = this.decodePct(pct)
 			if (!png) continue
 
 			await writeFile(outputPath, png)
@@ -66,31 +110,128 @@ export class Images implements IMainImages {
 		return result
 	}
 
-	private async readExtracted(root: string, entry: string) {
-		const candidates = [
-			join(root, win32.basename(entry)),
-			join(root, ...entry.split('\\'))
-		]
+	private async readCache(indexPath: string) {
+		const cached = JSON.parse(await readFile(indexPath, 'utf8')) as Record<string, string>
+		const valid: Record<string, string> = {}
+		let rejected = 0
 
-		for (const candidate of candidates) {
+		await Promise.all(Object.entries(cached).map(async ([symbol, path]) => {
+			let candidate = path
 			try {
-				return await readFile(candidate)
-			} catch (error) {
-				if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+				await access(candidate)
+			} catch {
+				// Las versiones anteriores guardaban rutas absolutas. Recupera la
+				// imagen si Steam o el área de trabajo se movieron a otra unidad.
+				candidate = join(dirname(indexPath), 'generated', basename(path))
+				await access(candidate)
+			}
+
+			if (this.isPlausibleCover(candidate)) valid[symbol] = candidate
+			else rejected++
+		}))
+
+		if (rejected) {
+			console.warn(`Se omitieron ${rejected} carátulas antiguas o dañadas de la caché.`)
+		}
+		return valid
+	}
+
+	private async readLatestCache(cacheRoot: string) {
+		try {
+			const indexes = (await readdir(cacheRoot, { withFileTypes: true }))
+				.filter(entry => entry.isDirectory())
+				.map(entry => join(cacheRoot, entry.name, 'index.json'))
+			const candidates = await Promise.all(indexes.map(async indexPath => {
+				try {
+					return {
+						cached: await this.readCache(indexPath),
+						modified: (await stat(indexPath)).mtimeMs
+					}
+				} catch {
+					return undefined
+				}
+			}))
+
+			return candidates
+				.filter(candidate => candidate !== undefined)
+				.toSorted((a, b) => b.modified - a.modified)
+				.at(0)?.cached
+		} catch {
+			return undefined
+		}
+	}
+
+	private async readArchiveFiles(archivePath: string, entryNames: string[]): Promise<Map<string, Buffer>> {
+		const wanted = new Map(entryNames.map(name => [name.replaceAll('\\', '/').toLowerCase(), name]))
+		const archiveSize = await this.zipContentSize(archivePath)
+
+		return await new Promise((resolve, reject) => {
+			const reader = new FileRangeReader(archivePath)
+			yauzl.fromRandomAccessReader(reader, archiveSize, {
+				autoClose: true,
+				lazyEntries: true,
+				strictFileNames: false
+			}, (openError, archive) => {
+				if (openError || !archive) return reject(openError ?? new Error(`No se pudo abrir ${archivePath}`))
+
+				const result = new Map<string, Buffer>()
+				archive.on('error', reject)
+				archive.on('end', () => {
+					if (result.size !== wanted.size) {
+						const missing = [...wanted.values()].filter(name => !result.has(name))
+						return reject(new Error(`No se encontraron en gfx.pak: ${missing.join(', ')}`))
+					}
+					resolve(result)
+				})
+				archive.on('entry', entry => {
+					const requested = wanted.get(entry.fileName.toLowerCase())
+					if (!requested) return archive.readEntry()
+
+					archive.openReadStream(entry, (streamError, stream) => {
+						if (streamError || !stream) return reject(streamError ?? new Error(`No se pudo leer ${entry.fileName}`))
+						const chunks: Buffer[] = []
+						stream.on('data', chunk => chunks.push(Buffer.from(chunk)))
+						stream.on('error', reject)
+						stream.on('end', () => {
+							result.set(requested, Buffer.concat(chunks))
+							archive.readEntry()
+						})
+					})
+				})
+				archive.readEntry()
+			})
+		})
+	}
+
+	/**
+	 * SnowRunner añade metadatos propios después del cierre ZIP. Yauzl exige
+	 * que ese registro sea el último byte, así que le presentamos el tamaño
+	 * lógico del ZIP sin copiar ni modificar el .pak original.
+	 */
+	private async zipContentSize(path: string) {
+		const fullSize = (await stat(path)).size
+		const tailSize = Math.min(fullSize, 1024 * 1024)
+		const handle = await openFile(path, 'r')
+		const tail = Buffer.alloc(tailSize)
+
+		try {
+			await handle.read(tail, 0, tailSize, fullSize - tailSize)
+		} finally {
+			await handle.close()
+		}
+
+		for (let index = tail.length - 22; index >= 0; index--) {
+			if (tail.readUInt32LE(index) !== 0x06054b50) continue
+			const commentLength = tail.readUInt16LE(index + 20)
+			const logicalSize = fullSize - tailSize + index + 22 + commentLength
+			const centralSize = tail.readUInt32LE(index + 12)
+			const centralOffset = tail.readUInt32LE(index + 16)
+			if (logicalSize <= fullSize && centralOffset + centralSize <= logicalSize) {
+				return logicalSize
 			}
 		}
 
-		throw new Error(`No se pudo extraer ${entry} desde gfx.pak.`)
-	}
-
-	private async extract(archive: string, target: string, entries: string[]) {
-		if (entries.length === 0) return
-
-		await execFileAsync(
-			join(this.paths.winrar, 'WinRAR.exe'),
-			['x', '-y', '-ibck', '-inul', archive, ...entries, `${target}\\`],
-			{ cwd: this.paths.winrar, windowsHide: true }
-		)
+		return fullSize
 	}
 
 	private readBundleFile(bundle: Buffer, requestedName: string) {
@@ -245,20 +386,34 @@ export class Images implements IMainImages {
 	}
 
 	private decodePct(content: Buffer) {
-		if (content.length < 88 || content.toString('ascii', 6, 10) !== 'TCIP') return
+		if (content.length < 64 || content.toString('ascii', 6, 10) !== 'TCIP') return
 
 		const width = content.readUInt32LE(16)
 		const storedHeight = content.readUInt32LE(20)
-		const blocks = Math.ceil(width / 4) * Math.ceil(storedHeight / 4)
-		const available = content.length - 88
-		const format = available === blocks * 8
-			? 'bc1'
-			: available === blocks * 16
-				? 'bc3'
-				: undefined
-		if (!format) return
+		const textureFormat = content.readUInt32LE(38)
+		const decoder = PCT_DECODERS.get(textureFormat)
+		if (!decoder || width < 1 || storedHeight < 1 || width > 8192 || storedHeight > 8192) return
 
-		const rgba = this.decodeBlocks(content.subarray(82), width, storedHeight, format)
+		let payloadOffset = content.readUInt32LE(54)
+		if (payloadOffset + 2 > content.length) return
+		if (content[payloadOffset] === 0x04 && content[payloadOffset + 1] === 0x01) {
+			payloadOffset += 10
+		}
+		payloadOffset += 6
+
+		const blocks = Math.ceil(width / 4) * Math.ceil(storedHeight / 4)
+		const payloadSize = blocks * decoder.blockSize
+		if (payloadOffset + payloadSize > content.length) return
+
+		const decoded = decoder.decode(
+			content.subarray(payloadOffset, payloadOffset + payloadSize),
+			width,
+			storedHeight
+		)
+		const rgba = Buffer.from(decoded)
+		if (rgba.length !== width * storedHeight * 4) return
+
+		// Electron recibe mapas de bits BGRA en Windows; tex-decoder devuelve RGBA.
 		for (let index = 0; index < rgba.length; index += 4) {
 			const red = rgba[index]
 			rgba[index] = rgba[index + 2]
@@ -266,80 +421,44 @@ export class Images implements IMainImages {
 		}
 
 		const image = nativeImage.createFromBitmap(rgba, { width, height: storedHeight })
+		if (image.isEmpty() || !this.isPlausibleImage(image)) return
 		const visibleHeight = width === 328 && storedHeight === 460 ? 458 : storedHeight
 		return image.crop({ x: 0, y: 0, width, height: visibleHeight }).toPNG()
 	}
 
-	private decodeBlocks(content: Buffer, width: number, height: number, format: 'bc1' | 'bc3') {
-		const rgba = Buffer.alloc(width * height * 4)
-		const bytesPerBlock = format === 'bc1' ? 8 : 16
-		const blocksWide = Math.ceil(width / 4)
-		const blocksHigh = Math.ceil(height / 4)
+	private isPlausibleCover(path: string) {
+		const image = nativeImage.createFromPath(path)
+		return !image.isEmpty() && this.isPlausibleImage(image)
+	}
 
-		for (let blockY = 0; blockY < blocksHigh; blockY++) {
-			for (let blockX = 0; blockX < blocksWide; blockX++) {
-				const offset = (blockY * blocksWide + blockX) * bytesPerBlock
-				const alpha = format === 'bc3' ? this.decodeBc3Alpha(content, offset) : undefined
-				const colorOffset = offset + (format === 'bc3' ? 8 : 0)
-				const colors = this.decodeBcColors(content, colorOffset, format === 'bc1')
-				const colorBits = content.readUInt32LE(colorOffset + 4)
+	/** Evita que texturas comprimidas con un códec erróneo se muestren como ruido RGB. */
+	private isPlausibleImage(source: Electron.NativeImage) {
+		const image = source.resize({ width: 64, height: 90, quality: 'good' })
+		const { width, height } = image.getSize()
+		const bitmap = image.toBitmap()
+		let totalDifference = 0
+		let comparisons = 0
 
-				for (let pixel = 0; pixel < 16; pixel++) {
-					const x = blockX * 4 + pixel % 4
-					const y = blockY * 4 + Math.floor(pixel / 4)
-					if (x >= width || y >= height) continue
+		const difference = (first: number, second: number) => (
+			Math.abs(bitmap[first] - bitmap[second])
+			+ Math.abs(bitmap[first + 1] - bitmap[second + 1])
+			+ Math.abs(bitmap[first + 2] - bitmap[second + 2])
+		)
 
-					const color = colors[(colorBits >>> (pixel * 2)) & 3]
-					const target = (y * width + x) * 4
-					rgba[target] = color[0]
-					rgba[target + 1] = color[1]
-					rgba[target + 2] = color[2]
-					rgba[target + 3] = alpha?.[pixel] ?? color[3]
+		for (let y = 0; y < height; y++) {
+			for (let x = 0; x < width; x++) {
+				const offset = (y * width + x) * 4
+				if (x + 1 < width) {
+					totalDifference += difference(offset, offset + 4)
+					comparisons++
+				}
+				if (y + 1 < height) {
+					totalDifference += difference(offset, offset + width * 4)
+					comparisons++
 				}
 			}
 		}
-		return rgba
-	}
 
-	private decodeBcColors(content: Buffer, offset: number, allowTransparent: boolean) {
-		const color0 = content.readUInt16LE(offset)
-		const color1 = content.readUInt16LE(offset + 2)
-		const first = this.rgb565(color0)
-		const second = this.rgb565(color1)
-		const colors: Array<[number, number, number, number]> = [[...first, 255], [...second, 255], [0, 0, 0, 255], [0, 0, 0, 255]]
-
-		if (color0 > color1 || !allowTransparent) {
-			colors[2] = first.map((value, index) => Math.round((2 * value + second[index]) / 3)).concat(255) as [number, number, number, number]
-			colors[3] = first.map((value, index) => Math.round((value + 2 * second[index]) / 3)).concat(255) as [number, number, number, number]
-		} else {
-			colors[2] = first.map((value, index) => Math.round((value + second[index]) / 2)).concat(255) as [number, number, number, number]
-			colors[3] = [0, 0, 0, 0]
-		}
-		return colors
-	}
-
-	private decodeBc3Alpha(content: Buffer, offset: number) {
-		const alpha0 = content[offset]
-		const alpha1 = content[offset + 1]
-		const table = [alpha0, alpha1, 0, 0, 0, 0, 0, 0]
-		if (alpha0 > alpha1) {
-			for (let index = 1; index <= 6; index++) table[index + 1] = Math.round(((7 - index) * alpha0 + index * alpha1) / 7)
-		} else {
-			for (let index = 1; index <= 4; index++) table[index + 1] = Math.round(((5 - index) * alpha0 + index * alpha1) / 5)
-			table[6] = 0
-			table[7] = 255
-		}
-
-		let bits = 0n
-		for (let index = 0; index < 6; index++) bits |= BigInt(content[offset + 2 + index]) << BigInt(index * 8)
-		return Array.from({ length: 16 }, (_, index) => table[Number((bits >> BigInt(index * 3)) & 7n)])
-	}
-
-	private rgb565(value: number): [number, number, number] {
-		return [
-			Math.round(((value >> 11) & 31) * 255 / 31),
-			Math.round(((value >> 5) & 63) * 255 / 63),
-			Math.round((value & 31) * 255 / 31)
-		]
+		return comparisons > 0 && totalDifference / comparisons < MAX_COVER_NOISE
 	}
 }

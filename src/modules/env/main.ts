@@ -10,10 +10,6 @@ export class Env implements IEnv {
 		return process.env.FORCE_DEVTOOLS === 'true'
 	}
 
-	get debugArchiver(): boolean {
-		return process.env.DEBUG_ARCHIVER === 'true'
-	}
-
 	get showSecurityWarnings(): boolean {
 		return process.env.ELECTRON_DISABLE_SECURITY_WARNINGS === 'false'
 	}

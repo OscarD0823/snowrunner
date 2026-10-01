@@ -315,9 +315,6 @@ export interface IDirs {
 	/** Папка `app`. */
 	root: IDir
 
-	/** Папка `WinRAR`. */
-	winrar: IDir
-
 	/** Папка со страницами. */
 	pages: IDir
 

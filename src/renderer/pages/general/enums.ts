@@ -25,7 +25,24 @@ export enum Category {
 	trucks = 'trucks',
 
 	/** Категория прицепов. */
-	trailers = 'trailers'
+	trailers = 'trailers',
+
+	/** Catálogo de archivos de motores. */
+	engines = 'engines',
+
+	/** Catálogo de juegos de neumáticos. */
+	wheels = 'wheels',
+
+	/** Catálogo de cabrestantes. */
+	winches = 'winches'
+}
+
+export type ComponentCategory = Category.engines | Category.wheels | Category.winches
+
+export function isComponentCategory(category: Category): category is ComponentCategory {
+	return category === Category.engines
+		|| category === Category.wheels
+		|| category === Category.winches
 }
 
 /** Режим списка. */

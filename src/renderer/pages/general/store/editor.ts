@@ -2,12 +2,14 @@ import type { IFile } from '@modules/files/renderer'
 import type { FileInfo } from '@modules/xml/renderer'
 import { defineStore } from 'pinia'
 import { reactive, ref, shallowRef } from 'vue'
+import type { ComponentCategory } from '../enums'
 
 export const useEditorStore = defineStore('editor', () => {
 	const editedAction = ref(EditedAction.markAsEdited)
 	const showMessages = ref(true)
 	const isSaving = ref(false)
 	const file = shallowRef<IFile | undefined>()
+	const componentCategory = ref<ComponentCategory | null>(null)
 	const info = reactive<FileInfo>({})
 	const allFiles = reactive({
 		main: null as null | IFile,
@@ -21,6 +23,7 @@ export const useEditorStore = defineStore('editor', () => {
 	return {
 		clearEditorStore() {
 			file.value = undefined
+			componentCategory.value = null
 			editedAction.value = EditedAction.markAsEdited
 			showMessages.value = true
 			isSaving.value = false
@@ -37,6 +40,9 @@ export const useEditorStore = defineStore('editor', () => {
 		/** Изменить текущий файл */
 		setFile(value: IFile) {
 			file.value = value
+		},
+		setComponentCategory(value: ComponentCategory) {
+			componentCategory.value = value
 		},
 		/** Изменить действие с маркировкой "изменённый" */
 		setEditedAction(value: EditedAction) {
@@ -56,6 +62,7 @@ export const useEditorStore = defineStore('editor', () => {
 		},
 		/** Текущий файл */
 		file,
+		componentCategory,
 		/** Информация о файле */
 		info,
 		/** Все файлы */

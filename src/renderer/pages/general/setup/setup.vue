@@ -58,19 +58,16 @@
 
 <script lang='ts' setup>
 import type { IFile } from '@modules/files/renderer'
-import { Page } from '@modules/windows/enums'
 import { ArrowRightOutlined, SafetyCertificateOutlined } from '@ant-design/icons-vue'
 import { Language } from '@renderer/components/language'
-import { usePageStore } from '@renderer/pages/general/store/page'
 import { di } from '@utilities/di/container'
-import { ARCHIVER_TOKEN, BACKUP_TOKEN, CONFIG_MANAGER_TOKEN, CONFIG_TOKEN, DLC_TOKEN, GAME_TEXTS_TOKEN, MESSAGES_TOKEN, MODS_TOKEN } from '@utilities/di/renderer/tokens'
+import { APP_TOKEN, CONFIG_MANAGER_TOKEN, CONFIG_TOKEN, MESSAGES_TOKEN } from '@utilities/di/renderer/tokens'
 import { Button, Steps } from 'ant-design-vue'
 import { ref } from 'vue'
 import InitialSelect from './initial-select.vue'
 import { SETUP_LOCALIZATION as texts } from './localization.js'
 
 const step = ref(0)
-const { route } = usePageStore()
 
 async function onChangeGameFolder(file?: IFile) {
 	if (!file) {
@@ -79,22 +76,15 @@ async function onChangeGameFolder(file?: IFile) {
 
 	const config = di.resolve(CONFIG_TOKEN)
 	const configManager = di.resolve(CONFIG_MANAGER_TOKEN)
-	const backup = di.resolve(BACKUP_TOKEN)
-	const archiver = di.resolve(ARCHIVER_TOKEN)
-	const dlc = di.resolve(DLC_TOKEN)
-	const gameTexts = di.resolve(GAME_TEXTS_TOKEN)
-	const mods = di.resolve(MODS_TOKEN)
 	const messages = di.resolve(MESSAGES_TOKEN)
 	config.initialPath = file.path
 
 	try {
-		await backup.save()
-		await archiver.unpackMain()
-		await gameTexts.initFromInitial()
-		await dlc.init()
-		await mods.procMods()
 		await configManager.save()
-		route(Page.lists)
+
+		// Las rutas pesadas se calculan al arrancar. Reiniciar aquí garantiza que
+		// el primer desempaquetado use `.snowrunner-studio` junto al juego y no C:.
+		di.resolve(APP_TOKEN).reload()
 	} catch (error: any) {
 		config.initialPath = null
 		await configManager.save()
@@ -111,6 +101,8 @@ async function onChangeGameFolder(file?: IFile) {
 	justify-content: center;
 	align-items: center;
 	padding: 32px;
+	box-sizing: border-box;
+	overflow: auto;
 	background:
 		radial-gradient(circle at 15% 15%, rgba(249, 115, 22, 0.16), transparent 32%),
 		linear-gradient(145deg, #111827, #1e293b);
@@ -118,6 +110,8 @@ async function onChangeGameFolder(file?: IFile) {
 	&-card {
 		box-sizing: border-box;
 		width: min(760px, 92vw);
+		max-height: calc(100vh - 36px);
+		overflow: auto;
 		padding: 38px 46px;
 		background: white;
 		border: 1px solid rgba(255, 255, 255, 0.5);
@@ -203,6 +197,33 @@ async function onChangeGameFolder(file?: IFile) {
 		margin-top: 22px;
 		color: #15803d;
 		font-size: 13px;
+	}
+
+	@media (max-width: 720px), (max-height: 720px) {
+		align-items: flex-start;
+		padding: 18px;
+
+		&-card {
+			width: 100%;
+			max-height: none;
+			padding: 24px 22px;
+		}
+
+		h1 {
+			margin-top: 14px;
+			font-size: 24px;
+		}
+
+		.steps {
+			margin-top: 20px;
+			padding: 0;
+		}
+
+		.steps-content {
+			min-height: 0;
+			margin-top: 16px;
+			padding: 16px;
+		}
 	}
 }
 </style>

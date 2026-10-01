@@ -33,9 +33,6 @@ export interface IPaths {
 	/** Иконка программы. */
 	icon: string
 
-	/** Папка `WinRAR`. */
-	winrar: string
-
 	/** Деинсталлятор. */
 	uninstall: string
 

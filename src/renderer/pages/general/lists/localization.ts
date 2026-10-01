@@ -184,6 +184,26 @@ export const LISTS_LOCALIZATION = loadLocalization(new Localization({
 		.de('Liste der Anhänger')
 		.ch('拖车清单'),
 
+	enginesListTitle: new LocalizationStrings()
+		.es('Motores')
+		.en('Engines'),
+
+	wheelsListTitle: new LocalizationStrings()
+		.es('Neumáticos')
+		.en('Tires'),
+
+	winchesListTitle: new LocalizationStrings()
+		.es('Cabrestantes')
+		.en('Winches'),
+
+	componentOptions: new LocalizationStrings()
+		.es('variantes editables')
+		.en('editable variants'),
+
+	componentOpenHint: new LocalizationStrings()
+		.es('Abrir y modificar')
+		.en('Open and edit'),
+
 	trailersCategory: new LocalizationStrings()
 		.ru('Прицепы')
 		.en('Trailers')

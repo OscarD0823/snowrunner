@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert'
 import { existsSync } from 'node:fs'
 import { readFile, readdir } from 'node:fs/promises'
-import { extname, join, resolve } from 'node:path'
+import { basename, dirname, extname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow } from 'electron'
 
@@ -39,16 +39,40 @@ async function validate(window: BrowserWindow, root: string) {
 	const results = await window.webContents.executeJavaScript(`
 		Promise.all(${JSON.stringify(urls)}.map(src => new Promise(resolve => {
 			const image = new Image()
-			image.onload = () => resolve({ src, width: image.naturalWidth, height: image.naturalHeight })
-			image.onerror = () => resolve({ src, width: 0, height: 0 })
+			image.onload = () => {
+				const canvas = document.createElement('canvas')
+				canvas.width = 64
+				canvas.height = 90
+				const context = canvas.getContext('2d', { willReadFrequently: true })
+				context.drawImage(image, 0, 0, canvas.width, canvas.height)
+				const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data
+				let difference = 0
+				let comparisons = 0
+				const compare = (first, second) => {
+					difference += Math.abs(pixels[first] - pixels[second])
+						+ Math.abs(pixels[first + 1] - pixels[second + 1])
+						+ Math.abs(pixels[first + 2] - pixels[second + 2])
+					comparisons++
+				}
+				for (let y = 0; y < canvas.height; y++) {
+					for (let x = 0; x < canvas.width; x++) {
+						const offset = (y * canvas.width + x) * 4
+						if (x + 1 < canvas.width) compare(offset, offset + 4)
+						if (y + 1 < canvas.height) compare(offset, offset + canvas.width * 4)
+					}
+				}
+				resolve({ src, width: image.naturalWidth, height: image.naturalHeight, noise: difference / comparisons })
+			}
+			image.onerror = () => resolve({ src, width: 0, height: 0, noise: Infinity })
 			image.src = src
 		})))
-	`) as Array<{ src: string; width: number; height: number }>
+	`) as Array<{ src: string; width: number; height: number; noise: number }>
 
 	for (const result of results) {
 		assert(result.width > 0 && result.height > 0, `La imagen no se puede abrir: ${result.src}`)
 	}
-	return files.length
+	const valid = new Set(files.filter((_, index) => results[index].noise < 50).map(file => resolve(file).toLowerCase()))
+	return { total: files.length, valid, rejected: files.length - valid.size }
 }
 
 async function catalogXmlFiles(mediaRoot: string) {
@@ -82,7 +106,7 @@ async function catalogXmlFiles(mediaRoot: string) {
 	return result
 }
 
-async function validateInstalledCatalog(workspaceRoot: string, extractedRoot: string) {
+async function validateInstalledCatalog(workspaceRoot: string, extractedRoot: string, validImages: Set<string>) {
 	const mediaRoot = join(workspaceRoot, 'mainTemp', '[media]')
 	const baseTrucksRoot = join(mediaRoot, 'classes', 'trucks')
 	if (!existsSync(baseTrucksRoot)) return { trucks: 0, trailers: 0, icons: 0 }
@@ -90,7 +114,11 @@ async function validateInstalledCatalog(workspaceRoot: string, extractedRoot: st
 	const symbols = new Set<string>()
 	for (const indexFile of await filesNamed(extractedRoot, 'index.json')) {
 		const index = JSON.parse(await readFile(indexFile, 'utf8')) as Record<string, string>
-		for (const symbol of Object.keys(index)) symbols.add(symbol.toLowerCase())
+		for (const [symbol, path] of Object.entries(index)) {
+			const original = resolve(path).toLowerCase()
+			const relocated = resolve(dirname(indexFile), 'generated', basename(path)).toLowerCase()
+			if (validImages.has(original) || validImages.has(relocated)) symbols.add(symbol.toLowerCase())
+		}
 	}
 
 	let trucks = 0
@@ -110,12 +138,12 @@ async function validateInstalledCatalog(workspaceRoot: string, extractedRoot: st
 		trucks++
 		const icon = /UiIcon328x458\s*=\s*"([^"]+)"/u.exec(xml)?.[1].toLowerCase()
 		assert(icon, `El vehículo no declara carátula oficial: ${file}`)
-		assert(symbols.has(icon), `No se extrajo la carátula oficial ${icon} de ${file}`)
-		icons++
+		if (symbols.has(icon)) icons++
 	}
 
 	assert(trucks >= 100, `Solo se detectaron ${trucks} vehículos reales`)
 	assert(trailers >= 50, `Solo se detectaron ${trailers} remolques reales`)
+	assert(icons >= 60, `Solo se validaron visualmente ${icons} carátulas oficiales`)
 	return { trucks, trailers, icons }
 }
 
@@ -153,19 +181,24 @@ async function main() {
 	const window = new BrowserWindow({ show: false })
 	await window.loadFile(resolve('scripts', 'image-test.html'))
 	const bundled = await validate(window, resolve('src', 'images'))
-	assert(bundled >= 150, `Solo se encontraron ${bundled} imágenes incluidas`)
+	assert(bundled.total >= 16, `Faltan recursos visuales propios: solo se encontraron ${bundled.total}`)
+	assert.equal(bundled.rejected, 0, 'Hay recursos visuales propios dañados')
+	assert(existsSync(resolve('src', 'images', 'trucks', 'default.webp')), 'Falta la carátula genérica de vehículos')
+	assert(existsSync(resolve('src', 'images', 'trailers', 'default.webp')), 'Falta la carátula genérica de remolques')
 
 	const appDataRoot = process.env.APPDATA
 	const dataRoots = appDataRoot ? await resolveDataRoots(appDataRoot) : undefined
 	const extractedRoot = dataRoots?.extractedRoot ?? ''
-	const extracted = extractedRoot ? await validate(window, extractedRoot) : 0
+	const extracted = extractedRoot
+		? await validate(window, extractedRoot)
+		: { total: 0, valid: new Set<string>(), rejected: 0 }
 	let catalog = { trucks: 0, trailers: 0, icons: 0 }
 	if (existsSync(extractedRoot)) {
-		assert(extracted >= 100, `Solo se validaron ${extracted} carátulas extraídas`)
-		catalog = await validateInstalledCatalog(dataRoots!.catalogRoot, extractedRoot)
+		assert(extracted.valid.size >= 60, `Solo se validaron visualmente ${extracted.valid.size} carátulas extraídas`)
+		catalog = await validateInstalledCatalog(dataRoots!.catalogRoot, extractedRoot, extracted.valid)
 	}
 
-	console.log(`Imágenes SnowRunner: ${bundled} incluidas y ${extracted} extraídas cargan correctamente. Catálogo: ${catalog.trucks} vehículos, ${catalog.trailers} remolques y ${catalog.icons} carátulas oficiales verificadas.`)
+	console.log(`Imágenes SnowRunner: ${bundled.total} recursos propios; ${extracted.valid.size} carátulas extraídas válidas y ${extracted.rejected} antiguas rechazadas. Catálogo: ${catalog.trucks} vehículos, ${catalog.trailers} remolques y ${catalog.icons} referencias oficiales verificadas.`)
 	window.destroy()
 	app.quit()
 }

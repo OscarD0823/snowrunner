@@ -98,3 +98,4 @@ test.js
 dist
 artifacts/
 .snowrunner-data/
+.reference-snowrunner-next/

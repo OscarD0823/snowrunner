@@ -6,9 +6,6 @@ export interface IEnv {
 	/** В любом случае показать devtools. */
 	forceDevTools: boolean
 
-	/** Показывать WinRAR окно. */
-	debugArchiver: boolean
-
 	/** Показывать предупреждения безопасности Electron. */
 	showSecurityWarnings: boolean
 

@@ -14,6 +14,18 @@ export const MENU_LOCALIZATION = loadLocalization(new Localization({
 		.es('Remolques')
 		.en('Trailers'),
 
+	enginesNav: new LocalizationStrings()
+		.es('Motores')
+		.en('Engines'),
+
+	wheelsNav: new LocalizationStrings()
+		.es('Neumáticos')
+		.en('Tires'),
+
+	winchesNav: new LocalizationStrings()
+		.es('Cabrestantes')
+		.en('Winches'),
+
 	editedNav: new LocalizationStrings()
 		.es('Modificados')
 		.en('Edited'),

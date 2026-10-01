@@ -1,9 +1,8 @@
 import { loadLocalization } from '@localization/main'
 import type { IMainMods } from '@modules/data/modifications/types'
 import { Page, ProgramWindow } from '@modules/windows/enums'
-import type { IResettable } from '@src/types'
 import { di, inject } from '@utilities/di/container'
-import { APP_TOKEN, CHECKS_TOKEN, CONFIG_MANAGER_TOKEN, CONFIG_TOKEN, DLC_TOKEN, EDITED_TOKEN, FAVORITES_TOKEN, GAME_TEXTS_TOKEN, IMAGES_TOKEN, LOADING_TOKEN, MODS_TOKEN, QUIT_PARAMS_TOKEN, SIZES_TOKEN, WINDOWS_TOKEN } from '@utilities/di/main/tokens'
+import { CHECKS_TOKEN, CONFIG_MANAGER_TOKEN, CONFIG_TOKEN, DLC_TOKEN, EDITED_TOKEN, FAVORITES_TOKEN, FILES_TOKEN, GAME_TEXTS_TOKEN, IMAGES_TOKEN, LOADING_TOKEN, MODS_TOKEN, QUIT_PARAMS_TOKEN, SIZES_TOKEN, WINDOWS_TOKEN } from '@utilities/di/main/tokens'
 import { app } from 'electron'
 import { BaseProgram } from './base-program'
 import { MAIN_LOCALIZATION } from './localization'
@@ -42,12 +41,21 @@ export class Program extends BaseProgram {
 			return loading.hideLoading()
 		}
 
+		const files = di.resolve(FILES_TOKEN)
+		if (!await files.initial.exists()) {
+			config.initialPath = null
+			await di.resolve(CONFIG_MANAGER_TOKEN).save()
+			windows.generalWindow!.route(Page.setup)
+
+			return loading.hideLoading()
+		}
+
 		await loading.runStage(this.texts.unpack, checks.checkInitialChanges.bind(checks))
 
 		if (!await loading.runStage(this.texts.checkFiles, checks.hasAllPaths.bind(checks))) {
-			const app: IResettable = di.resolve(APP_TOKEN)
+			windows.generalWindow!.route(Page.setup)
 
-			return app.reset()
+			return loading.hideLoading()
 		}
 
 		const dlc = di.resolve(DLC_TOKEN)

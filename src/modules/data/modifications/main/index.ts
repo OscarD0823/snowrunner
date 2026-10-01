@@ -73,7 +73,16 @@ export class Mods extends BaseMainArray<IMod, IMod & { file: IFile }> implements
 				continue
 			}
 
-			await this.archiver.unpackMod(file, name)
+			try {
+				await this.archiver.unpackMod(file, name)
+			} catch (error) {
+				// Un mod descargado a medias o con un contenedor distinto no debe
+				// impedir que la biblioteca principal se abra.
+				console.warn(`Se omitió el mod no compatible: ${file.path}`, error)
+				await this.dirs.modsTemp.dir(name).remove()
+				deleteFromList(name)
+				continue
+			}
 			const hasClasses = await this.dirs.modsTemp.dir(name, 'classes').exists()
 
 			if (!hasClasses) {
@@ -111,7 +120,13 @@ export class Mods extends BaseMainArray<IMod, IMod & { file: IFile }> implements
 			const tempDir = this.dirs.modsTemp.dir(file.name)
 
 			if (file.isExt('pak')) {
-				await this.archiver.unpack(file.path, tempDir.path)
+				try {
+					await this.archiver.unpack(file.path, tempDir.path)
+				} catch (error) {
+					console.warn(`Se ignoró un .pak de mod no compatible: ${file.path}`, error)
+					await tempDir.remove()
+					return
+				}
 
 				if (await tempDir.dir('classes').exists()) {
 					const modioFile = dir.file('modio.json')

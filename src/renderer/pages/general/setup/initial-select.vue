@@ -100,17 +100,31 @@ async function getFromFolder(): Promise<IFile | undefined> {
 }
 
 async function findInitial(dir: IDir): Promise<IFile | undefined> {
-	const parts = ['steamapps', 'common', 'SnowRunner', 'en_us', 'preload', 'paks', 'client', 'initial.pak']
-	const len = parts.length
+	const suffixes = [
+		['initial.pak'],
+		['preload', 'paks', 'client', 'initial.pak'],
+		['en_us', 'preload', 'paks', 'client', 'initial.pak'],
+		['SnowRunner', 'preload', 'paks', 'client', 'initial.pak'],
+		['SnowRunner', 'en_us', 'preload', 'paks', 'client', 'initial.pak'],
+		['steamapps', 'common', 'SnowRunner', 'preload', 'paks', 'client', 'initial.pak'],
+		['steamapps', 'common', 'SnowRunner', 'en_us', 'preload', 'paks', 'client', 'initial.pak']
+	]
+	let current = dir
 
-	for (let i = 0; i < len; i++) {
-		const file = dir.file(...parts)
-		
-		if (await file.exists()) {
-			return file
+	// Steam permite elegir desde la biblioteca, la carpeta del juego o incluso
+	// `client`. También se cubre la estructura histórica que incluía `en_us`.
+	for (let depth = 0; depth < 7; depth++) {
+		for (const suffix of suffixes) {
+			const candidate = current.file(...suffix)
+
+			if (await candidate.exists()) {
+				return candidate
+			}
 		}
-		
-		parts.shift()
+
+		const parent = current.root
+		if (parent.path === current.path) break
+		current = parent
 	}
 }
 </script>

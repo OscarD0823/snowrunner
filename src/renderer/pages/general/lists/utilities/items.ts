@@ -1,5 +1,5 @@
-import { TruckFileType, TruckXML } from '@modules/xml/renderer'
-import { Category, SourceType } from '../../enums'
+import { Engines, TruckFileType, TruckXML, Wheels, WinchVariants } from '@modules/xml/renderer'
+import { Category, SourceType, isComponentCategory } from '../../enums'
 
 import type { IDir, IFile } from '@modules/files/renderer'
 import { di } from '@utilities/di/container'
@@ -24,6 +24,16 @@ export class ItemsUtils {
 
 	private async filterByCategory(array: IFile[], category: Category): Promise<IFile[]> {
 		const classified = await Promise.all(array.map(async file => {
+			if (isComponentCategory(category)) {
+				const xml = category === Category.engines
+					? await Engines.from(file)
+					: category === Category.wheels
+						? await Wheels.from(file)
+						: await WinchVariants.from(file)
+
+				return xml?.exists() ? file : undefined
+			}
+
 			const xml = await TruckXML.from(file)
 
 			if (!xml?.exists()) {
@@ -44,6 +54,8 @@ export class ItemsUtils {
 	}
 
 	private async getList(category: Category, from?: SourceType): Promise<IFile[]> {
+		const folder = this.getFolder(category)
+
 		if (from === SourceType.dlc) {
 			const dlcs = di.resolve(DLC_TOKEN)
 			const array: IFile[] = []
@@ -51,7 +63,10 @@ export class ItemsUtils {
 			for (const dlc of dlcs) {
 				const classes = dlc.dir.dir('classes')
 
-				array.push(...await this.findCatalogFiles(classes.dir('trucks')))
+				array.push(...isComponentCategory(category)
+					? await classes.dir(folder).findFiles({ ext: 'xml' })
+					: await this.findCatalogFiles(classes.dir('trucks'))
+				)
 			}
 
 			return this.unique(array)
@@ -66,7 +81,10 @@ export class ItemsUtils {
 			for (const mod of mods) {
 				const modClasses = dirs.modsTemp.dir(mod.name, 'classes')
 
-				array.push(...await this.findCatalogFiles(modClasses.dir('trucks')))
+				array.push(...isComponentCategory(category)
+					? await modClasses.dir(folder).findFiles({ ext: 'xml' })
+					: await this.findCatalogFiles(modClasses.dir('trucks'))
+				)
 			}
 
 			return this.unique(array)
@@ -76,7 +94,17 @@ export class ItemsUtils {
 			return this.findCatalogFiles(dirs.classes.dir('trucks'))
 		}
 
-		return []
+		return dirs.classes.dir(folder).findFiles({ ext: 'xml' })
+	}
+
+	private getFolder(category: Category) {
+		return category === Category.engines
+			? 'engines'
+			: category === Category.wheels
+				? 'wheels'
+				: category === Category.winches
+					? 'winches'
+					: 'trucks'
 	}
 
 	/**

@@ -40,8 +40,18 @@ export default defineConfig(forgeEnv => {
 			viteStaticCopy({
 				targets: [
 					{ src: `${paths.images}/icons/*`, dest: '../src/renderer/pages/images/icons', rename: { stripBase: true } },
-					{ src: `${paths.images}/trailers/*`, dest: '../src/renderer/pages/images/trailers', rename: { stripBase: true } },
-					{ src: `${paths.images}/trucks/*`, dest: '../src/renderer/pages/images/trucks', rename: { stripBase: true } }
+					// Las carátulas del juego se extraen de la instalación del usuario.
+					// El paquete solo conserva fondos genéricos creados para la aplicación.
+					{
+						src: `${paths.images}/trailers/default.webp`,
+						dest: '../src/renderer/pages/images/trailers',
+						rename: { stripBase: true }
+					},
+					{
+						src: `${paths.images}/trucks/default.webp`,
+						dest: '../src/renderer/pages/images/trucks',
+						rename: { stripBase: true }
+					}
 				]
 			})
 		],

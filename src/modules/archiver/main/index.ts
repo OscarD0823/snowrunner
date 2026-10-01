@@ -4,7 +4,7 @@ import { di, inject } from '@utilities/di/container'
 import { CONFIG_TOKEN, DIRS_TOKEN, FILES_TOKEN, LOADING_TOKEN, MESSAGES_TOKEN, MODS_TOKEN, SIZES_TOKEN } from '@utilities/di/main/tokens'
 import { ARCHIVE_LOCALIZATION } from '../localization'
 import type { IMainArchiver } from '../types'
-import { WinRAR } from './archiver'
+import { ZipArchive } from './archiver'
 import type { ISystemArchiver } from './archiver/types'
 
 /** Работа с архивами. [main] */
@@ -13,7 +13,7 @@ export class Archive implements IMainArchiver {
 	private readonly texts = loadLocalization(ARCHIVE_LOCALIZATION)
 
 	/** Архиватор. */
-	private readonly archiver: ISystemArchiver = new WinRAR()
+	private readonly archiver: ISystemArchiver = new ZipArchive()
 
 	/** Основные папки. */
 	@inject(DIRS_TOKEN)
@@ -28,9 +28,8 @@ export class Archive implements IMainArchiver {
 	async update(dir: IDir, archive: IFile) {
 		const marker = dir.file('edited')
 
-		await this.archiver.update(dir, archive)
 		await marker.make()
-		await this.archiver.add(marker, archive)
+		await this.archiver.update(dir, archive)
 		await this.saveSize(archive)
 	}
 

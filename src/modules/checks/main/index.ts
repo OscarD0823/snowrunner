@@ -63,10 +63,19 @@ export class Checks implements IMainChecks {
 		const initial = this.files.initial
 
 		const hasInitial = await initial.exists()
-		const hasContent = await this.dirs.mainTemp.dir(this.MEDIA_FOLDER).exists()
+		if (!hasInitial) {
+			return
+		}
+
+		const hasContent = (await Promise.all([
+			this.dirs.mainTemp.dir(this.MEDIA_FOLDER).exists(),
+			this.dirs.classes.exists(),
+			this.dirs.dlc.exists(),
+			this.dirs.templates.exists()
+		])).every(Boolean)
 		const withoutChanges = await initial.getSize() === sizes.initial
 
-		if (!hasInitial || (hasContent && withoutChanges)) {
+		if (hasContent && withoutChanges) {
 			return
 		}
 
@@ -91,6 +100,10 @@ export class Checks implements IMainChecks {
 	}
 
 	async checkUpdate(whateverCheck?: boolean): Promise<string | undefined> {
+		if (process.windowsStore) {
+			return
+		}
+
 		const config = di.resolve(CONFIG_TOKEN)
 		const { promise, resolve, reject } = Promise.withResolvers<string | undefined>()
 

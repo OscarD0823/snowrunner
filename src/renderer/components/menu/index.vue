@@ -76,7 +76,7 @@
 </template>
 
 <script lang='ts' setup>
-import { AppstoreAddOutlined, CarOutlined, CloudDownloadOutlined, ContainerOutlined, DatabaseOutlined, EditOutlined, FileOutlined, FolderOpenOutlined, GithubOutlined, InfoCircleOutlined, LogoutOutlined, QuestionCircleOutlined, RollbackOutlined, SaveOutlined, SettingOutlined, SyncOutlined } from '@ant-design/icons-vue'
+import { AppstoreAddOutlined, CarOutlined, CloudDownloadOutlined, ContainerOutlined, DashboardOutlined, DatabaseOutlined, EditOutlined, FileOutlined, FolderOpenOutlined, GithubOutlined, InfoCircleOutlined, LinkOutlined, LogoutOutlined, QuestionCircleOutlined, RollbackOutlined, SaveOutlined, SettingOutlined, SyncOutlined, ThunderboltOutlined } from '@ant-design/icons-vue'
 import { Page } from '@modules/windows/enums'
 import { Category, SourceType } from '@renderer/pages/general/enums'
 import { useListStore } from '@renderer/pages/general/store/list'
@@ -132,6 +132,27 @@ const workspaceItems = computed(() => [
 		icon: ContainerOutlined,
 		active: listStore.category === Category.trailers && listStore.source !== SourceType.edited && listStore.source !== SourceType.mods,
 		onClick: () => openLibrary(Category.trailers, SourceType.all)
+	},
+	{
+		key: 'engines',
+		label: texts.enginesNav,
+		icon: ThunderboltOutlined,
+		active: listStore.category === Category.engines && listStore.source !== SourceType.edited && listStore.source !== SourceType.mods,
+		onClick: () => openLibrary(Category.engines, SourceType.all)
+	},
+	{
+		key: 'wheels',
+		label: texts.wheelsNav,
+		icon: DashboardOutlined,
+		active: listStore.category === Category.wheels && listStore.source !== SourceType.edited && listStore.source !== SourceType.mods,
+		onClick: () => openLibrary(Category.wheels, SourceType.all)
+	},
+	{
+		key: 'winches',
+		label: texts.winchesNav,
+		icon: LinkOutlined,
+		active: listStore.category === Category.winches && listStore.source !== SourceType.edited && listStore.source !== SourceType.mods,
+		onClick: () => openLibrary(Category.winches, SourceType.all)
 	},
 	{
 		key: 'edited',

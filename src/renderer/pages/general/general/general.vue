@@ -11,7 +11,12 @@
       v-else-if="page === Page.lists || page !== Page.none"
       v-show="page === Page.lists"
     />
-    <Editor v-if="page === Page.editor" />
+    <ComponentEditor
+      v-if="page === Page.editor && componentCategory && selectedFile"
+      :file="selectedFile"
+      :category="componentCategory"
+    />
+    <Editor v-else-if="page === Page.editor" />
   </template>
 </template>
 
@@ -23,10 +28,11 @@ import { Menu } from '@renderer/components/menu'
 import { useWindowReady } from '@renderer/utilities/use-window-ready'
 import { hasItems } from '@utilities/checks/renderer'
 import { di } from '@utilities/di/container'
-import { DIRS_TOKEN, DLC_TOKEN, EDITED_TOKEN, FILES_TOKEN, LOADING_TOKEN, SYSTEM_TOKEN, WINDOWS_TOKEN } from '@utilities/di/renderer/tokens'
+import { CONFIG_TOKEN, DIRS_TOKEN, DLC_TOKEN, EDITED_TOKEN, FILES_TOKEN, LOADING_TOKEN, SYSTEM_TOKEN, WINDOWS_TOKEN } from '@utilities/di/renderer/tokens'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Editor } from '../editor'
+import ComponentEditor from '../editor/component-editor.vue'
 import { Lists } from '../lists'
 import { editorUtils } from '../lists/utilities/editor'
 import { Setup } from '../setup'
@@ -37,19 +43,30 @@ import GameUpdate from './game-update.vue'
 import { GENERAL_LOCALIZATION as texts } from './localization'
 
 const loading = di.resolve(LOADING_TOKEN)
+const config = di.resolve(CONFIG_TOKEN)
 const dirs = di.resolve(DIRS_TOKEN)
 const files = di.resolve(FILES_TOKEN)
 
 const pageStore = usePageStore()
 const { route } = pageStore
 const { page } = storeToRefs(pageStore)
-const { setShowMessages } = useEditorStore()
+const editorStore = useEditorStore()
+const { setShowMessages } = editorStore
+const { componentCategory, file: selectedFile } = storeToRefs(editorStore)
 
 const gameUpdateOpened = ref(false)
 
 useWindowReady(ProgramWindow.general)
 useGameUpdate()
 useMainRouting()
+
+watch(
+	() => config.initialPath,
+	initialPath => {
+		if (!initialPath) route(Page.setup)
+	},
+	{ immediate: true }
+)
 
 function useGameUpdate() {
 	watch(

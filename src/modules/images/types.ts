@@ -42,6 +42,9 @@ export interface IImages {
 
 	/** Indica si el elemento tiene una carátula elegida por el usuario. */
 	hasCustom(category: Category, file: IFile): boolean
+
+	/** Vaciar cachés y volver a leer carátulas tras buscar contenido nuevo. */
+	refresh(): void
 }
 
 /** Preparación de carátulas originales. [main] */

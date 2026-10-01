@@ -2,7 +2,7 @@
   <div class="lists">
     <section class="library-heading">
       <div class="library-heading__title">
-        <h1>{{ category === Category.trucks ? texts.trucksListTitle : texts.trailersListTitle }}</h1>
+        <h1>{{ categoryTitle }}</h1>
         <span>{{ files[SourceType.all].length }} {{ texts.resultCount }}</span>
       </div>
       <div class="library-heading__actions">
@@ -65,7 +65,7 @@ import { AppstoreOutlined, FilterOutlined, MenuOutlined, SyncOutlined } from '@a
 import type { IFile } from '@modules/files/renderer'
 import { useKey } from '@renderer/utilities/use-key'
 import { di } from '@utilities/di/container'
-import { APP_TOKEN, CHECKS_TOKEN, DLC_TOKEN, MESSAGES_TOKEN, MODS_TOKEN } from '@utilities/di/renderer/tokens'
+import { APP_TOKEN, CHECKS_TOKEN, DLC_TOKEN, IMAGES_TOKEN, MESSAGES_TOKEN, MODS_TOKEN } from '@utilities/di/renderer/tokens'
 import { Button, Segmented, Spin, Tooltip } from 'ant-design-vue'
 import { storeToRefs } from 'pinia'
 import { computed, h, onMounted, ref, watch } from 'vue'
@@ -100,6 +100,14 @@ const viewSections = computed(() => [
 		value: ListMode.list
 	}
 ])
+
+const categoryTitle = computed(() => ({
+	[Category.trucks]: texts.trucksListTitle,
+	[Category.trailers]: texts.trailersListTitle,
+	[Category.engines]: texts.enginesListTitle,
+	[Category.wheels]: texts.wheelsListTitle,
+	[Category.winches]: texts.winchesListTitle
+})[category.value])
 
 const filtersIsOpen = ref(true)
 const isScanning = ref(false)
@@ -165,6 +173,7 @@ async function scanNewContent() {
 		await checks.checkInitialChanges()
 		await dlc.init()
 		await mods.procMods()
+		di.resolve(IMAGES_TOKEN).refresh()
 		clearFiles()
 		await loadFiles()
 		messages.success(texts.rescanComplete)

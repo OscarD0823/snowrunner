@@ -1,7 +1,7 @@
 {
 	"name": "snowrunner-studio-es",
 	"productName": "SnowRunner Studio",
-	"version": "2.1.0",
+	"version": "2.2.0",
 	"description": "Editor visual multilingüe para vehículos, remolques y componentes de SnowRunner.",
 	"type": "module",
 	"repository": {
@@ -12,11 +12,17 @@
 	"scripts": {
 		"package": "electron-forge package --platform=win32 --arch=x64",
 		"build:exe": "cross-env NODE_ENV=production electron-forge make --platform=win32 --arch=x64",
+		"build:msix": "cross-env NODE_ENV=production SNOWRUNNER_STORE_BUILD=true electron-forge make --platform=win32 --arch=x64",
+		"build:store": "cross-env NODE_ENV=production SNOWRUNNER_STORE_BUILD=true SNOWRUNNER_STORE_UPLOAD=true electron-forge make --platform=win32 --arch=x64",
+		"assets:store": "electron scripts/generate-store-assets.cjs",
 		"make": "cross-env NODE_ENV=production electron-forge make --platform=win32 --arch=x64",
 		"package-prod": "npm i && cross-env NODE_ENV=production electron-forge package --platform=win32 --arch=x64",
 		"start": "cross-env NODE_ENV=development electron-forge start",
-		"test": "npm run test:images",
+		"test": "npm run test:archive && npm run test:images && npm run test:pct",
+		"test:archive": "esbuild scripts/test-archive.ts --bundle --platform=node --format=esm --outfile=.vite/test-archive.mjs && node .vite/test-archive.mjs",
 		"test:images": "esbuild scripts/test-images.ts --bundle --platform=node --format=cjs --external:electron --outfile=.vite/test-images.cjs && electron .vite/test-images.cjs",
+		"test:pct": "esbuild scripts/test-pct-images.ts --bundle --platform=node --format=cjs --target=es2022 --external:electron --outfile=.vite/test-pct-images.cjs && electron .vite/test-pct-images.cjs",
+		"test:ui": "node scripts/test-ui.mjs && node scripts/test-library-ui.mjs",
 		"lint": "eslint src/**",
 		"lint:fix": "npm run lint -- --fix",
 		"check": "tsc --project src/tsconfig.json --noEmit && vue-tsc --project src/tsconfig.json --noEmit"
@@ -31,6 +37,7 @@
 	},
 	"devDependencies": {
 		"@electron-forge/cli": "^7.11.2",
+		"@electron-forge/maker-msix": "^7.11.2",
 		"@electron-forge/maker-squirrel": "^7.11.2",
 		"@electron-forge/plugin-vite": "^7.11.2",
 		"@electron-forge/publisher-github": "^7.11.2",
@@ -60,11 +67,14 @@
 		"debounce": "^3.0.0",
 		"electron-squirrel-startup": "^1.0.1",
 		"emr-bridge": "^2.0.2",
+		"fflate": "^0.8.3",
 		"pinia": "^4.0.3",
+		"tex-decoder": "^2.0.0",
 		"tslib": "^2.8.1",
 		"update-electron-app": "^3.3.0",
 		"vue": "^3.5.42",
-		"xml-formatter": "^3.7.0"
+		"xml-formatter": "^3.7.0",
+		"yauzl": "^3.4.0"
 	},
 	"allowScripts": {
 		"@parcel/watcher@2.6.0": true,

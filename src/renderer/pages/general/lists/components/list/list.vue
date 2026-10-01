@@ -30,9 +30,10 @@
       class="empty-state"
       :description="texts.emptyList"
     />
-    <ListItem
+    <component
+      :is="isComponentCategory(item.category) ? ComponentItem : ListItem"
       v-for="item of listItems"
-      :key="item.file.name"
+      :key="item.file.path"
       :file="item.file"
       :category="item.category"
       :style="{ display: files[source].includes(item.file) ? 'block' : 'none' }"
@@ -52,11 +53,12 @@ import { APP_TOKEN } from '@utilities/di/renderer/tokens'
 import { Button, Empty, Modal } from 'ant-design-vue'
 import { storeToRefs } from 'pinia'
 import { computed, nextTick, ref, watch } from 'vue'
-import { ListMode, SourceType } from '../../../enums'
+import { ListMode, SourceType, isComponentCategory } from '../../../enums'
 import { useListStore } from '../../../store/list'
 import { LISTS_LOCALIZATION as texts } from '../../localization'
 import ModsPopup from '../mods-popup.vue'
 import ListItem from './item.vue'
+import ComponentItem from './component-item.vue'
 
 const { category, source, files, listMode } = storeToRefs(useListStore())
 const isShowMods = ref(false)

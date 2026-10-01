@@ -385,7 +385,6 @@ export class Dirs implements IDirs {
 	}
 
 	root = new Dir(this.paths.root)
-	winrar = new Dir(this.paths.winrar)
 	pages = new Dir(this.paths.pages)
 	backupFolder = new Dir(this.paths.backupFolder)
 	backupInitialData = new Dir(this.paths.backupInitialData)

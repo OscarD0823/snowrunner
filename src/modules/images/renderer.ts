@@ -76,7 +76,9 @@ export class Images implements IImages {
 			const extracted = await this.getGameImages()
 			const extractedPath = extracted[shopReference]
 
-			if (extractedPath) return this.toFileUrl(extractedPath)
+			if (extractedPath && await this.dirs.newDir(extractedPath).asFile().exists()) {
+				return this.toFileUrl(extractedPath)
+			}
 		}
 
 		if (await this.bundledImageExists(image)) {
@@ -144,6 +146,11 @@ export class Images implements IImages {
 
 	hasCustom(category: Category, file: IFile) {
 		return Boolean(di.resolve(CONFIG_TOKEN).customImages[this.customKey(category, file)])
+	}
+
+	refresh() {
+		this.gameImages = undefined
+		this.modImages.clear()
 	}
 
 	private customKey(category: Category, file: IFile) {

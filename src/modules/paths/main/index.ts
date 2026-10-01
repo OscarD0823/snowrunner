@@ -1,6 +1,6 @@
 import { app } from 'electron'
 import { accessSync, constants, existsSync, readFileSync, statfsSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { dirname, join, resolve as resolvePath } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import type { IMainPathsManager, IPaths } from '../types'
@@ -16,9 +16,11 @@ export class Paths implements IMainPathsManager {
 	private readonly dirname = dirname(fileURLToPath(import.meta.url))
 
 	/** Almacenamiento que no se elimina al recompilar la aplicación. */
-	private readonly dataRoot = process.env.NODE_ENV === 'development'
-		? this.resolve('../../.snowrunner-data')
-		: app.getPath('userData')
+	private readonly dataRoot = process.env.SNOWRUNNER_DATA_ROOT
+		? resolvePath(process.env.SNOWRUNNER_DATA_ROOT)
+		: process.env.NODE_ENV === 'development'
+			? this.resolve('../../.snowrunner-data')
+			: app.getPath('userData')
 	/** Los XML extraídos pueden ocupar cientos de MB; se guardan junto al juego cuando es posible. */
 	private readonly workspaceRoot = this.getWorkspaceRoot()
 
@@ -41,7 +43,6 @@ export class Paths implements IMainPathsManager {
 		backupInitialWithDate: this.getBackupInitialWithDate(),
 		backupInitialData: this.workspace('backups/previous_initial'),
 		icon: this.resolve('../favicon.ico'),
-		winrar: this.resolve('winrar'),
 		mainTemp: this.workspace('mainTemp'),
 		modsTemp: this.workspace('modsTemp'),
 		updateTemp: this.workspace('updateTemp'),

@@ -6,7 +6,7 @@ La aplicación permite explorar vehículos y remolques, cambiar sus parámetros 
 
 ## Estado del proyecto
 
-La versión `2.1.0` incluye:
+La versión `2.2.0` incluye:
 
 - interfaz y descripciones técnicas completas en español;
 - asistente inicial que explica cómo localizar `initial.pak`;
@@ -27,10 +27,17 @@ La versión `2.1.0` incluye:
 - editor adaptable con campos, valores originales y recomendaciones Poco/Medio/Alto legibles en media pantalla;
 - prueba automática de todas las imágenes, la clasificación instalada y las carátulas oficiales extraídas;
 - instalador de Windows y actualizaciones automáticas mediante GitHub Releases.
+- selección de instalación Steam corregida: guarda la ruta y reinicia antes de extraer, evitando cierres y uso accidental de C:;
+- bienvenida adaptable con selector de 13 idiomas que nunca sale de la ventana;
+- apertura animada propia, accesible y compatible con movimiento reducido;
+- bibliotecas independientes y editables para motores, neumáticos y cabrestantes;
+- carátulas oficiales obtenidas solo desde `gfx.pak`, con validación e invalidación del caché al buscar contenido nuevo;
+- motor ZIP integrado que conserva las rutas internas de SnowRunner y elimina la redistribución no autorizada de WinRAR;
+- variante MSIX para Microsoft Store bajo el nombre **Offroad XML Studio**, sin archivos ni carátulas del juego dentro del paquete.
 
 Los nombres de vehículos y objetos se leen de los textos incluidos por el propio juego. Cuando SnowRunner no proporciona una cadena en español, se utiliza el nombre inglés.
 
-Las carátulas se regeneran cuando cambia `gfx.pak`. En la instalación comprobada se encontraron 122 símbolos gráficos y las 118 referencias usadas por los XML de vehículos tuvieron coincidencia. Los remolques no declaran `UiIcon328x458`; la aplicación usa su imagen incluida, una variante visual de la misma familia o la imagen predeterminada. El usuario también puede elegir una imagen local con clic derecho.
+Las carátulas se regeneran cuando cambia `gfx.pak`. En la instalación comprobada se encontraron 122 símbolos gráficos y las 118 referencias usadas por los XML de vehículos tuvieron coincidencia. Los remolques no declaran `UiIcon328x458`; la aplicación usa una carátula genérica propia, una imagen incluida por el mod o una imagen local elegida por el usuario con clic derecho.
 
 ## Ejecutar en Windows
 
@@ -48,6 +55,15 @@ npm run build:exe
 ```
 
 El resultado se guarda dentro de `out/make/squirrel.windows/x64`. El archivo `SnowRunner Studio Setup.exe` instala la aplicación y crea sus accesos directos.
+
+Para crear un MSIX local de prueba:
+
+```powershell
+npm run assets:store
+npm run build:msix
+```
+
+La entrega final de Microsoft Store necesita la identidad exacta de Partner Center. Consulta `STORE_SUBMISSION.md`.
 
 ## Publicar una versión
 

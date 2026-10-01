@@ -8,7 +8,6 @@ export default defineConfig(forgeEnv => {
 	const { forgeConfigSelf } = forgeEnv
 	const define = getBuildDefine(forgeEnv)
 	const rootDir = '../'
-	const thisDir = '.'
 
 	const forgeConfig = forgeConfigSelf as any
 
@@ -34,7 +33,8 @@ export default defineConfig(forgeEnv => {
 					{ src: paths.favicon, dest: rootDir, rename: { stripBase: true } },
 					{ src: paths.readme, dest: rootDir },
 					{ src: paths.license, dest: rootDir },
-					{ src: `${paths.winrar}/*`, dest: `${thisDir}/winrar`, rename: { stripBase: true } }
+					{ src: paths.privacy, dest: rootDir },
+					{ src: paths.notice, dest: rootDir }
 				]
 			})
 		],

@@ -6,7 +6,7 @@ import { app } from 'electron'
 import squirrelStartup from 'electron-squirrel-startup'
 import { UpdateSourceType, updateElectronApp } from 'update-electron-app'
 
-if (squirrelStartup) {
+if (squirrelStartup && !process.windowsStore) {
 	app.quit()
 } else {
 	app.setAppUserModelId('com.squirrel.SnowRunnerStudio.SnowRunnerStudio')
@@ -19,7 +19,9 @@ if (squirrelStartup) {
 function initAutoUpdater() {
 	const config = di.resolve(CONFIG_TOKEN)
 
-	if (!app.isPackaged || !config.checkUpdates) {
+	// Las aplicaciones instaladas por Microsoft Store se actualizan mediante
+	// la propia tienda; Squirrel/GitHub no debe modificar ese paquete.
+	if (process.windowsStore || !app.isPackaged || !config.checkUpdates) {
 		return
 	}
 

@@ -19,14 +19,14 @@ class Paths {
 	/** Иконка. */
 	readonly favicon = normalizePath(resolve(this.images, './favicon.ico'))
 
-	/** Папка с WinRAR. */
-	readonly winrar = normalizePath(resolve(this.src, './modules/archiver/main/archiver/files'))
-
 	/** Файл лицензии. */
 	readonly license = normalizePath(resolve(this.root, './LICENSE'))
 
 	/** Файл README. */
 	readonly readme = normalizePath(resolve(this.root, './README.md'))
+
+	readonly privacy = normalizePath(resolve(this.root, './PRIVACY.md'))
+	readonly notice = normalizePath(resolve(this.root, './NOTICE.md'))
 }
 
 export const paths = new Paths()
