@@ -269,8 +269,8 @@ export const LISTS_LOCALIZATION = loadLocalization(new Localization({
 		.en('Search'),
 
 	searchPlaceholder: new LocalizationStrings()
-		.es('Nombre del vehículo...')
-		.en('Vehicle name...'),
+		.es('Nombre de vehículo, componente o modelo compatible…')
+		.en('Vehicle, component or compatible model name…'),
 
 	filtersButton: new LocalizationStrings()
 		.es('Mostrar u ocultar filtros')

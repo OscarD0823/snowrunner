@@ -19,6 +19,7 @@
         height="87"
         :src="imgSRC"
         :alt="name"
+        :title="imgSRC.startsWith('data:') ? presentationTexts.preview : name"
         loading="lazy"
         decoding="async"
         @error="useDefaultImage"
@@ -68,6 +69,7 @@
           height="300"
           :src="imgSRC"
           :alt="name"
+          :title="imgSRC.startsWith('data:') ? presentationTexts.preview : name"
           loading="lazy"
           decoding="async"
           @error="useDefaultImage"
@@ -120,6 +122,7 @@ import { Page } from '@modules/windows/enums'
 import type { TruckType } from '@modules/xml/renderer'
 import { TruckXML } from '@modules/xml/renderer'
 import ContextMenu from '@renderer/components/context-menu.vue'
+import { COMPONENT_PRESENTATION_TEXTS as presentationTexts } from '@renderer/utilities/component-presentation'
 import { useEditorStore } from '@renderer/pages/general/store/editor'
 import { useListStore } from '@renderer/pages/general/store/list'
 import { usePageStore } from '@renderer/pages/general/store/page'
@@ -168,13 +171,13 @@ function getName(file: IFile, xml: TruckXML): string {
 	let name = prettyString(file.name)
 
 	if (xml.GameData?.UiDesc) {
-		const uiName = xml.GameData?.UiDesc?.UiName
+		const uiName = xml.GameData?.UiDesc?.displayName
 
 		if (uiName) {
 			const gameTexts = di.resolve(GAME_TEXTS_TOKEN)
 			const mods = di.resolve(MODS_TOKEN)
 
-			name = gameTexts.get(uiName, mods.getModID(file)) || uiName
+			name = gameTexts.get(uiName, mods.getModID(file)) || name
 		}
 	}
 

@@ -84,6 +84,23 @@ for (let attempt = 0; attempt < 120; attempt++) {
 }
 
 const results = []
+const journeyFrames = []
+for (const time of [0, 4300, 9000]) {
+	const state = await call('Runtime.evaluate', {
+		expression: `(() => {
+			const convoy = document.querySelector('.setup-journey .journey-convoy')
+			const animation = convoy?.getAnimations()[0]
+			if (!animation) throw new Error('No existe la animación del camión')
+			animation.pause()
+			animation.currentTime = ${time}
+			return { time: ${time}, name: convoy.textContent.trim(), transform: getComputedStyle(convoy).transform }
+		})()`, returnByValue: true
+	})
+	journeyFrames.push(state.result.value)
+	await new Promise(resolve => setTimeout(resolve, 50))
+	const shot = await call('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
+	await writeFile(join(outputDir, `journey-${time}.png`), Buffer.from(shot.data, 'base64'))
+}
 for (const viewport of [{ width: 600, height: 520 }, { width: 960, height: 620 }, { width: 1366, height: 768 }]) {
 	await call('Emulation.setDeviceMetricsOverride', { ...viewport, deviceScaleFactor: 1, mobile: false })
 	await new Promise(resolve => setTimeout(resolve, 150))
@@ -121,6 +138,8 @@ for (const viewport of [{ width: 600, height: 520 }, { width: 960, height: 620 }
 
 socket.close()
 child.kill()
+
+if (journeyFrames.length !== 3 || new Set(journeyFrames.map(frame => frame.transform)).size !== 3 || journeyFrames.some(frame => !frame.name.includes('SnowRunner Studio'))) throw new Error(`El camión no recorre el terreno llevando el nombre: ${JSON.stringify(journeyFrames)}`)
 
 for (const result of results) {
 	if (result.title !== 'SnowRunner Studio') throw new Error(`Título inesperado: ${result.title}`)

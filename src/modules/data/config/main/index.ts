@@ -124,7 +124,8 @@ export class Config implements IMainConfigManager {
 			config = { ...this.default, ...config }
 		} else if (this.isOlderVersion(config.version, this.default.version)) {
 			config = this.convertToNewest(config)
-			this.dirs.mainTemp.removeSync()
+			// La migración de preferencias no debe borrar XML editados ni carátulas.
+			// Checks verifica el contenido y los textos faltantes se extraen aparte.
 		} else {
 			config = this.default
 		}

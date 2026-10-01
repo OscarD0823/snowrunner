@@ -6,7 +6,7 @@ La aplicación permite explorar vehículos y remolques, cambiar sus parámetros 
 
 ## Estado del proyecto
 
-La versión `2.2.0` incluye:
+La versión `2.3.0` incluye:
 
 - interfaz y descripciones técnicas completas en español;
 - asistente inicial que explica cómo localizar `initial.pak`;
@@ -30,6 +30,11 @@ La versión `2.2.0` incluye:
 - selección de instalación Steam corregida: guarda la ruta y reinicia antes de extraer, evitando cierres y uso accidental de C:;
 - bienvenida adaptable con selector de 13 idiomas que nunca sale de la ventana;
 - apertura animada propia, accesible y compatible con movimiento reducido;
+- recorrido de un camión desde el logo hasta la zona de idioma, sobre nieve, rocas y barro, con el nombre del programa como carga;
+- lectura regional corregida para los Ford CLT9000 y F 750 y carátula visible dentro del editor;
+- extracción de los 13 idiomas del juego y migración del español sin sobrescribir los XML editados;
+- nombres de variantes y vehículos compatibles en cada biblioteca de componentes, con explicaciones visibles en español;
+- vistas 3D representativas propias para neumáticos y familias de remolques, sin incorporar modelos originales;
 - bibliotecas independientes y editables para motores, neumáticos y cabrestantes;
 - carátulas oficiales obtenidas solo desde `gfx.pak`, con validación e invalidación del caché al buscar contenido nuevo;
 - motor ZIP integrado que conserva las rutas internas de SnowRunner y elimina la redistribución no autorizada de WinRAR;
@@ -37,7 +42,7 @@ La versión `2.2.0` incluye:
 
 Los nombres de vehículos y objetos se leen de los textos incluidos por el propio juego. Cuando SnowRunner no proporciona una cadena en español, se utiliza el nombre inglés.
 
-Las carátulas se regeneran cuando cambia `gfx.pak`. En la instalación comprobada se encontraron 122 símbolos gráficos y las 118 referencias usadas por los XML de vehículos tuvieron coincidencia. Los remolques no declaran `UiIcon328x458`; la aplicación usa una carátula genérica propia, una imagen incluida por el mod o una imagen local elegida por el usuario con clic derecho.
+Las carátulas se regeneran cuando cambia `gfx.pak`. En la instalación comprobada se encontraron 122 símbolos gráficos y las 118 referencias usadas por los XML de vehículos tuvieron coincidencia. Los remolques no declaran `UiIcon328x458`; la aplicación muestra una vista representativa 3D de su familia, una imagen incluida por el mod o una imagen local elegida por el usuario con clic derecho. Las vistas de neumáticos usan las proporciones del XML y un dibujo representativo; no son los modelos originales ni prometen visualizar cambios físicos de agarre.
 
 ## Ejecutar en Windows
 

@@ -13,10 +13,11 @@
     />
     <ComponentEditor
       v-if="page === Page.editor && componentCategory && selectedFile"
+      :key="`${componentCategory}:${selectedFile.path}`"
       :file="selectedFile"
       :category="componentCategory"
     />
-    <Editor v-else-if="page === Page.editor" />
+    <Editor v-else-if="page === Page.editor" :key="selectedFile?.path" :file="selectedFile" />
   </template>
 </template>
 

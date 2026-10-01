@@ -88,7 +88,7 @@ const onBack: PageHeaderProps['onBack'] = props.withBack
 	}
 
 	:global(.ant-page-header-back) {
-		margin-right: 0 !important;
+		margin-right: 14px !important;
 	}
 
 	@media (max-width: 700px) {

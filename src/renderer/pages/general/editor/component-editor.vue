@@ -19,8 +19,18 @@
     </Header>
     <div class="component-editor__body">
       <div class="component-editor__intro">
-        <strong>{{ categoryTitle }}</strong>
-        <span>{{ texts.description }}</span>
+        <div class="component-editor__summary">
+          <strong>{{ categoryTitle }}</strong>
+          <span>{{ presentation?.hint || texts.description }}</span>
+          <p>{{ presentation?.variants.join(' · ') }}</p>
+          <p class="compatible-models">{{ presentation?.compatible.length ? `${presentationTexts.compatible}: ${presentation.compatible.join(', ')}` : presentationTexts.unassigned }}</p>
+          <span>{{ presentationTexts.shared }}</span>
+          <small>{{ file.name }}.xml</small>
+        </div>
+        <figure v-if="wheels" class="component-editor__preview">
+          <TirePreview :radius="wheels.Radius" :width="wheels.Width" :pattern="presentation?.pattern || file.name" />
+          <figcaption>{{ presentationTexts.preview }}</figcaption>
+        </figure>
       </div>
       <Spin
         v-if="isLoading"
@@ -58,6 +68,8 @@ import { Page } from '@modules/windows/enums'
 import { Engines, Wheels, WinchVariants } from '@modules/xml/renderer'
 import Header from '@renderer/components/header.vue'
 import Spin from '@renderer/components/spin.vue'
+import TirePreview from '@renderer/components/tire-preview.vue'
+import { presentComponent, COMPONENT_PRESENTATION_TEXTS as presentationTexts, type ComponentPresentation } from '@renderer/utilities/component-presentation'
 import { useKey } from '@renderer/utilities/use-key'
 import { prettyString } from '@utilities/strings/renderer'
 import { di } from '@utilities/di/container'
@@ -88,7 +100,8 @@ const engines = shallowRef<Engines | null>(null)
 const wheels = shallowRef<Wheels | null>(null)
 const winches = shallowRef<WinchVariants | null>(null)
 
-const title = prettyString(props.file.name)
+const presentation = ref<ComponentPresentation>()
+const title = computed(() => presentation.value?.title ?? prettyString(props.file.name))
 const categoryTitle = computed(() => ({
 	[Category.engines]: texts.engines,
 	[Category.wheels]: texts.wheels,
@@ -119,6 +132,7 @@ async function load() {
 		}
 
 		hasError.value = !engines.value && !wheels.value && !winches.value
+		if (!hasError.value) presentation.value = await presentComponent(props.file, props.category)
 	} catch {
 		hasError.value = true
 	} finally {
@@ -167,8 +181,8 @@ async function save() {
 		display: flex;
 		margin-bottom: 14px;
 		padding: 14px 16px;
-		flex-direction: column;
-		gap: 3px;
+		flex-direction: row;
+		gap: 18px;
 		color: #9a3412;
 		background: #fff7ed;
 		border: 1px solid #fed7aa;
@@ -176,6 +190,13 @@ async function save() {
 
 		span { color: #64748b; font-size: 12px; }
 	}
+	&__summary { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 6px; }
+	&__summary p { margin: 0; color: #475569; font-size: 12px; line-height: 1.5; }
+	&__summary small { color: #7b8795; font-size: 10px; }
+	&__preview { flex: 0 0 220px; width: 220px; height: 165px; margin: 0; text-align: center; }
+	&__preview .tire-preview { height: 140px; }
+	&__preview figcaption { color: #64748b; font-size: 10px; }
+	:deep(.parameter) { min-width: min(650px, 100%); }
 }
 
 .save-button {
@@ -188,6 +209,8 @@ async function save() {
 }
 
 @media (max-width: 700px) {
+	.component-editor__intro { flex-direction: column; }
+	.component-editor__preview { flex-basis: auto; width: 100%; height: 160px; }
 	.component-editor__body { padding: 12px; }
 	.save-button span { display: none; }
 }

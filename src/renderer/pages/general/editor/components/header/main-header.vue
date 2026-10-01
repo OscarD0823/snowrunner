@@ -154,9 +154,9 @@ async function save(updateFiles = true) {
 
 function getMainTitle(): string {
 	if (xml.GameData?.UiDesc) {
-		const text = xml.GameData.UiDesc.UiName ?? xml.GameData.UiDesc.DefaultRegion?.UiName
+		const text = xml.GameData.UiDesc.displayName
 
-		return di.resolve(GAME_TEXTS_TOKEN).get(text, mods.getModID(file)) ?? text ?? 'TITLE_ERROR'
+		return di.resolve(GAME_TEXTS_TOKEN).get(text, mods.getModID(file)) ?? prettyString(file.name)
 	}
 
 	const separator = file.path.includes('/') ? '/' : '\\'

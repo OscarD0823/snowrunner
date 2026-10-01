@@ -18,7 +18,7 @@ export function getGameText(key?: string, preset?: string, mod?: string): string
 
 	const gameTexts = di.resolve(GAME_TEXTS_TOKEN)
 
-	return gameTexts.get(key, mod) ?? `${preset}: ${key}`
+	return gameTexts.get(key, mod) ?? preset ?? key
 }
 
 export type ReadyProps = EmitsToProps<ReadyEmits>

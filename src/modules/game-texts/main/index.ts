@@ -1,4 +1,5 @@
 import { makeReactive } from '@bridge/main'
+import { ZipArchive } from '@modules/archiver/main/archiver'
 import { Lang } from '@modules/data/config/enums'
 import type { IConfig } from '@modules/data/config/types'
 import type { IDirs } from '@modules/files/main'
@@ -46,11 +47,15 @@ export class GameTexts implements IMainGameTexts {
 	}
 
 	async initFromInitial() {
+		const archiver = di.resolve(ARCHIVER_TOKEN)
+		await archiver.isInitialUnpacking
+		if (this.config.initialPath) {
+			await new ZipArchive().extractMissingStrings(this.config.initialPath, this.dirs.mainTemp.path)
+		}
 		if (!await this.dirs.strings.exists()) {
 			return
 		}
 
-		const archiver = di.resolve(ARCHIVER_TOKEN)
 		const candidates = this.locals[this.config.lang] ?? this.locals[Lang.en]
 		let stringsFile = this.dirs.strings.file('strings_english.str')
 
@@ -66,7 +71,9 @@ export class GameTexts implements IMainGameTexts {
 				await archiver.isInitialUnpacking
 
 				if (await stringsFile.exists()) {
-					this.set({ main: this.parseFile(await stringsFile.read('utf16le')) })
+					const english = this.dirs.strings.file('strings_english.str')
+					const fallback = await english.exists() ? this.parseFile(await english.read('utf16le')) : {}
+					this.set({ main: { ...fallback, ...this.parseFile(await stringsFile.read('utf16le')) } })
 				}
 		}
 
@@ -95,13 +102,12 @@ export class GameTexts implements IMainGameTexts {
 				continue
 			}
 
-			const stringsFile = this.dirs.modsTemp.file(mod.name, `texts/strings_${this.locals[this.config.lang]}.str`)
-
-			if (!await stringsFile.exists()) {
-				continue
+			const strings: ITranslation = {}
+			for (const locale of [...(this.locals[this.config.lang] ?? this.locals[Lang.en])].reverse()) {
+				const stringsFile = this.dirs.modsTemp.file(mod.name, `texts/strings_${locale}.str`)
+				if (await stringsFile.exists()) Object.assign(strings, this.parseFile(await stringsFile.read('utf16le')))
 			}
-
-			result[mod.name] = this.parseFile(await stringsFile.read('utf16le'))
+			result[mod.name] = strings
 		}
 
 		this.set({ mods: result })
@@ -134,7 +140,7 @@ export class GameTexts implements IMainGameTexts {
 			}
 
 			key = key
-				.trimEnd()
+				.trim()
 				.replaceAll('"', '')
 				.replaceAll('\'', '')
 				.replaceAll('﻿', '')

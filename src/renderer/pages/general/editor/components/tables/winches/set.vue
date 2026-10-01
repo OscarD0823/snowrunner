@@ -9,7 +9,7 @@
         v-if="config.advancedMode"
         :descriptor="Winch.$Name"
       />
-      <Int :descriptor="Winch.$Length" />
+      <Float :descriptor="Winch.$Length" />
       <Float :descriptor="Winch.$StrengthMult" />
       <Select
         :descriptor="<any>Winch.$IsEngineIgnitionRequired"
@@ -41,7 +41,6 @@ import Accordion from '../../accordion.vue'
 import Group from '../../group/group.vue'
 import Info from '../../info/info.vue'
 import Float from '../../input/variants/float.vue'
-import Int from '../../input/variants/int.vue'
 import Select from '../../select/select.vue'
 import type { ReadyEmits, ReadyProps } from '../../utilities'
 import { getGameText, useReady } from '../../utilities'

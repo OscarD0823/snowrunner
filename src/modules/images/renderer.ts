@@ -8,31 +8,6 @@ import { APP_TOKEN, CONFIG_MANAGER_TOKEN, CONFIG_TOKEN, DIALOGS_TOKEN, DIRS_TOKE
 import type { Images as MainImages } from './main'
 import type { IImages } from './types'
 
-/**
- * Variantes que reutilizan la misma carrocería o el mismo tipo de remolque.
- * SnowRunner no incluye una carátula 328x458 para los remolques; estas
- * equivalencias evitan mostrar una tarjeta vacía cuando ya existe una imagen
- * representativa de la misma familia dentro de la aplicación.
- */
-const TRAILER_IMAGE_FALLBACKS = new Map([
-	['pacific_p16_trailer_log_pole', 'trailer_log_pole'],
-	['scout_trailer_heavy_repair', 'trailer_service_2'],
-	['scout_trailer_light_repair', 'trailer_service_2'],
-	['semitrailer_flatbed_3', 'semitrailer_flatbed_5'],
-	['semitrailer_flatbed_6', 'semitrailer_flatbed_5'],
-	['semitrailer_gooseneck_3', 'semitrailer_gooseneck_4'],
-	['semitrailer_log_double_hinge', 'trailer_log'],
-	['semitrailer_log_double_ls', 'trailer_log'],
-	['semitrailer_stepdeck_plane_02', 'semitrailer_stepdeck_plane_01'],
-	['semitrailer_watertank', 'semitrailer_oiltank'],
-	['trailer_log_medium', 'trailer_log'],
-	['trailer_log_pole_zikz_612h', 'trailer_log_pole'],
-	['trailer_log_short', 'trailer_log'],
-	['trailer_watertank', 'trailer_oiltank'],
-	['train_dlc_17', 'train'],
-	['train_wagons_dlc_17', 'train']
-])
-
 /** Работа с картинками. [renderer] */
 @initMain()
 export class Images implements IImages {
@@ -48,8 +23,6 @@ export class Images implements IImages {
 
 	/** Encontradas correctamente; evita volver a recorrer mods grandes. */
 	private readonly modImages = new Map<string, string>()
-	/** Existencia de imágenes incluidas, compartida entre tarjetas. */
-	private readonly bundledImages = new Map<string, Promise<boolean>>()
 
 	/** Carátulas leídas de gfx.pak, indexadas por UiIcon328x458. */
 	private gameImages?: Promise<Record<string, string>>
@@ -59,19 +32,20 @@ export class Images implements IImages {
 		if (custom) return this.toFileUrl(custom)
 
 		const images = this.dirs.newDir(this.getImagePath(category))
-		const image = images.file(`${file.name}.webp`)
 		const defaultImage = images.file('default.webp')
 		const modID = this.mods.getModID(file)
 
 		if (modID) {
 			const modImage = await this.getModImage(file, xml)
-
-			return modImage
-				? modImage
-				: defaultImage.path
+			if (modImage) return modImage
+			if (category === 'trailers') {
+				const { renderTrailer } = await import('@renderer/utilities/preview-3d')
+				return renderTrailer(file.name) ?? defaultImage.path
+			}
+			return defaultImage.path
 		}
 
-		const shopReference = xml.GameData?.UiDesc?.UiIcon328x458?.trim().toLowerCase()
+		const shopReference = xml.GameData?.UiDesc?.displayIcon?.trim().toLowerCase()
 		if (shopReference) {
 			const extracted = await this.getGameImages()
 			const extractedPath = extracted[shopReference]
@@ -81,19 +55,10 @@ export class Images implements IImages {
 			}
 		}
 
-		if (await this.bundledImageExists(image)) {
-			return image.path
+		if (category === 'trailers') {
+			const { renderTrailer } = await import('@renderer/utilities/preview-3d')
+			return renderTrailer(file.name) ?? defaultImage.path
 		}
-
-		const fallbackName = TRAILER_IMAGE_FALLBACKS.get(file.name.toLowerCase())
-		if (fallbackName) {
-			const fallback = images.file(`${fallbackName}.webp`)
-
-			if (await this.bundledImageExists(fallback)) {
-				return fallback.path
-			}
-		}
-
 		return defaultImage.path
 	}
 
@@ -171,7 +136,7 @@ export class Images implements IImages {
 			return
 		}
 
-		const rawReference = xml.GameData.UiDesc.UiIcon328x458?.trim()
+		const rawReference = xml.GameData.UiDesc.displayIcon?.trim()
 		const cacheKey = `${modName}:${rawReference ?? file.name}`
 		const cached = this.modImages.get(cacheKey)
 
@@ -253,29 +218,4 @@ export class Images implements IImages {
 		return `file:///${parts.join('/')}`
 	}
 
-	/**
-	 * Существует ли картинка.
-	 * @param file Файл картинки.
-	 * @returns Существует ли картинка.
-	 */
-	private imageExists(file: IFile): Promise<boolean> {
-		const image = new Image()
-
-		return new Promise(resolve => {
-			image.onload = () => resolve(true)
-			image.onerror = () => resolve(false)
-			image.src = file.path
-		})
-	}
-
-	private bundledImageExists(file: IFile) {
-		let result = this.bundledImages.get(file.path)
-
-		if (!result) {
-			result = this.imageExists(file)
-			this.bundledImages.set(file.path, result)
-		}
-
-		return result
-	}
 }

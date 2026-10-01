@@ -33,7 +33,7 @@ try {
 await rm(outputDir, { recursive: true, force: true })
 await mkdir(join(dataRoot, 'jsons'), { recursive: true })
 await writeFile(join(dataRoot, 'jsons', 'config.json'), JSON.stringify({
-	version: '2.2.0',
+	version: JSON.parse(await readFile(join(repo, 'package.json'), 'utf8')).version,
 	buildType: 'prod',
 	lang: 'ES',
 	initialPath,
@@ -58,6 +58,8 @@ const child = spawn(exe, [`--remote-debugging-port=${port}`, `--user-data-dir=${
 	stdio: 'ignore',
 	windowsHide: true
 })
+let socket
+try {
 
 async function getTarget() {
 	for (let attempt = 0; attempt < 100; attempt++) {
@@ -72,7 +74,7 @@ async function getTarget() {
 }
 
 const target = await getTarget()
-const socket = new WebSocket(target.webSocketDebuggerUrl)
+socket = new WebSocket(target.webSocketDebuggerUrl)
 const waiting = new Map()
 const diagnostics = []
 const networkFailures = []
@@ -184,6 +186,56 @@ const truckShot = await call('Page.captureScreenshot', { format: 'png', captureB
 await writeFile(join(outputDir, 'trucks-960x620.png'), Buffer.from(truckShot.data, 'base64'))
 
 const categories = {}
+
+async function waitFor(expression, description) {
+	for (let attempt = 0; attempt < 160; attempt++) {
+		if (await evaluate(expression)) return
+		await new Promise(resolve => setTimeout(resolve, 125))
+	}
+	throw new Error(`No se completó: ${description}. ${diagnostics.join('\n')}`)
+}
+async function selectCategory(label) {
+	await evaluate(`(() => {
+		const button = [...document.querySelectorAll('.workspace-navigation__item')].find(item => item.textContent.trim() === ${JSON.stringify(label)})
+		if (!button) throw new Error('Falta la categoría')
+		button.click()
+	})()`)
+}
+async function back() {
+	await evaluate(`document.querySelector('.ant-page-header-back-button')?.click()`)
+	await waitFor(`Boolean(document.querySelector('.list')?.getBoundingClientRect().height) && !document.querySelector('.vehicle-preview, .component-editor')`, 'volver a la biblioteca')
+}
+const fords = []
+for (const model of ['CLT9000', 'F 750']) {
+	const found = await evaluate(`(() => {
+		const card = [...document.querySelectorAll('.card-container')].find(item => item.textContent.replace(/[- ]/g, '').toLowerCase().includes(${JSON.stringify(model.replace(/[- ]/g, '').toLowerCase())}))
+		card?.scrollIntoView({ block: 'center' })
+		return Boolean(card)
+	})()`)
+	if (!found) throw new Error(`No apareció el Ford ${model}`)
+	await waitFor(`(() => {
+		const image = [...document.querySelectorAll('.card-container img')].find(image => image.alt.replace(/[- ]/g, '').toLowerCase().includes(${JSON.stringify(model.replace(/[- ]/g, '').toLowerCase())}))
+		return image?.complete && image.naturalWidth > 0 && image.src.includes('/game-images/')
+	})()`, `carátula Ford ${model}`)
+	await evaluate(`(() => {
+		const card = [...document.querySelectorAll('.card-container')].find(item => item.textContent.replace(/[- ]/g, '').toLowerCase().includes(${JSON.stringify(model.replace(/[- ]/g, '').toLowerCase())}))
+		card.querySelector('.card').click()
+	})()`)
+	await waitFor(`Boolean(document.querySelector('.vehicle-preview strong')?.textContent.replace(/[- ]/g, '').toLowerCase().includes(${JSON.stringify(model.replace(/[- ]/g, '').toLowerCase())}) && document.querySelector('.vehicle-preview img')?.complete && document.querySelector('.vehicle-preview img')?.naturalWidth > 0 && document.querySelector('.vehicle-preview img')?.src.includes(${JSON.stringify(model === 'CLT9000' ? 'shopimgfordclt9000' : 'shopimgford750')}))`, `foto del Ford ${model} en el editor`)
+	fords.push(await evaluate(`({name: document.querySelector('.vehicle-preview strong').textContent, image: document.querySelector('.vehicle-preview img').src, parameters: document.querySelectorAll('.parameter').length})`))
+	const shot = await call('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
+	await writeFile(join(outputDir, `ford-${model.replaceAll(' ', '')}-editor.png`), Buffer.from(shot.data, 'base64'))
+	await back()
+}
+
+await selectCategory('Remolques')
+await waitFor(`document.querySelectorAll('.card-container').length > 0 && [...document.querySelectorAll('.card-container img')].some(image => image.complete && image.naturalWidth > 0 && image.src.startsWith('data:'))`, 'remolques con vista representativa')
+const trailers = await evaluate(`({cards: document.querySelectorAll('.card-container').length, visible: [...document.querySelectorAll('.card-container')].filter(card => getComputedStyle(card).display !== 'none').length, previews: [...document.querySelectorAll('.card-container img')].filter(image => image.src.startsWith('data:')).length})`)
+await evaluate(`document.querySelector('.card-container .card').click()`)
+await waitFor(`document.querySelectorAll('.parameter').length > 0 && Boolean(document.querySelector('.vehicle-preview img')?.naturalWidth)`, 'editor de remolques')
+trailers.editorParameters = await evaluate(`document.querySelectorAll('.parameter').length`)
+await back()
+
 for (const label of ['Motores', 'Neumáticos', 'Cabrestantes']) {
 	await evaluate(`(() => {
 		const button = [...document.querySelectorAll('.workspace-navigation__item')].find(item => item.textContent.trim() === ${JSON.stringify(label)})
@@ -196,13 +248,13 @@ for (const label of ['Motores', 'Neumáticos', 'Cabrestantes']) {
 	}
 	categories[label] = await evaluate(`({
 		cards: document.querySelectorAll('.component-card').length,
-		illustrations: document.querySelectorAll('.component-card .component-cover > svg').length,
+		illustrations: document.querySelectorAll('.component-card .component-cover > svg, .component-card .tire-preview').length,
 		bodyWidth: document.documentElement.scrollWidth,
 		viewportWidth: innerWidth,
 		sample: (() => {
 			const card = document.querySelector('.component-card')
 			const cover = card?.querySelector('.component-cover')
-			const svg = cover?.querySelector(':scope > svg')
+			const svg = cover?.querySelector(':scope > svg, .tire-preview')
 			return card && cover && svg ? {
 				card: card.getBoundingClientRect().toJSON(),
 				cover: cover.getBoundingClientRect().toJSON(),
@@ -212,6 +264,22 @@ for (const label of ['Motores', 'Neumáticos', 'Cabrestantes']) {
 			} : null
 		})()
 	})`)
+	await waitFor(`document.querySelector('.component-card .component-variants')?.textContent.trim().length > 0`, `nombres de ${label}`)
+	if (label === 'Neumáticos') {
+		await waitFor(`Boolean(document.querySelector('.tire-preview img')?.naturalWidth > 0)`, 'render de neumáticos')
+		categories[label].rendered = await evaluate(`document.querySelectorAll('.tire-preview img').length`)
+		const shot = await call('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
+		await writeFile(join(outputDir, 'tires-3d.png'), Buffer.from(shot.data, 'base64'))
+	}
+	await evaluate(`document.querySelector('.component-card').click()`)
+	await waitFor(`document.querySelectorAll('.component-editor .ant-collapse-header').length > 0`, `editor de ${label}`)
+	await evaluate(`document.querySelector('.component-editor .ant-collapse-header').click()`)
+	await waitFor(`[...document.querySelectorAll('.component-editor .parameter-help')].some(help => help.getBoundingClientRect().height > 0) && [...document.querySelectorAll('.component-editor input')].some(input => input.getBoundingClientRect().height > 0)`, `campos visibles de ${label}`)
+	await new Promise(resolve => setTimeout(resolve, 300))
+	categories[label].editor = await evaluate(`({title: document.querySelector('.header-title').textContent, variants: [...document.querySelectorAll('.component-editor .ant-collapse-header')].map(item => item.textContent.trim()), labels: [...document.querySelectorAll('.component-editor .parameter .label')].map(item => item.textContent.trim()), help: document.querySelectorAll('.component-editor .parameter-help').length, preview: Boolean(document.querySelector('.component-editor .tire-preview img')?.naturalWidth)})`)
+	const editorShot = await call('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
+	await writeFile(join(outputDir, `${label}-editor.png`), Buffer.from(editorShot.data, 'base64'))
+	await back()
 }
 
 await new Promise(resolve => setTimeout(resolve, 500))
@@ -237,4 +305,14 @@ for (const [label, state] of Object.entries(categories)) {
 	}
 }
 
-console.log(JSON.stringify({ truckState, categories }, null, 2))
+if (trailers.cards < 30 || trailers.visible !== trailers.cards || !trailers.previews || !trailers.editorParameters) throw new Error(`Falló la biblioteca de remolques: ${JSON.stringify(trailers)}`)
+for (const [label, state] of Object.entries(categories)) {
+	if (!state.editor.help || state.editor.variants.some(name => /UI_|undefined/.test(name))) throw new Error(`Falta traducción/ayuda en ${label}: ${JSON.stringify(state.editor)}`)
+}
+if (!categories['Neumáticos'].rendered || !categories['Neumáticos'].editor.preview) throw new Error('Falta el render de neumáticos')
+await writeFile(join(outputDir, 'results.json'), JSON.stringify({ truckState, fords, trailers, categories, diagnostics, networkFailures }, null, 2))
+console.log(JSON.stringify({ trucks: truckState.cards, fords, trailers, components: Object.fromEntries(Object.entries(categories).map(([label, state]) => [label, { cards: state.cards, rendered: state.rendered, editor: state.editor.title, help: state.editor.help }])), errors: diagnostics.filter(text => /error|failed|uncaught/i.test(text)), failedRequests: networkFailures.length }, null, 2))
+} finally {
+	socket?.close()
+	child.kill()
+}

@@ -28,27 +28,7 @@
           r="13"
         />
       </svg>
-      <svg
-        v-else-if="category === Category.wheels"
-        viewBox="0 0 220 150"
-        aria-hidden="true"
-      >
-        <circle
-          cx="110"
-          cy="75"
-          r="55"
-        /><circle
-          cx="110"
-          cy="75"
-          r="31"
-        />
-        <circle
-          cx="110"
-          cy="75"
-          r="9"
-        />
-        <path d="m110 44 10 22 24-3-18 17 10 22-26-12-26 12 10-22-18-17 24 3z" />
-      </svg>
+      <TirePreview v-else-if="category === Category.wheels" :radius="presentation?.radius" :width="presentation?.width" :pattern="presentation?.pattern || file.name" />
       <svg
         v-else
         viewBox="0 0 220 150"
@@ -67,6 +47,10 @@
     <div class="component-copy">
       <strong>{{ displayName }}</strong>
       <span>{{ optionCount }} {{ texts.componentOptions }}</span>
+      <p class="component-variants">{{ presentation?.variants.slice(0, 3).join(' · ') }}</p>
+      <p class="component-compatible" :title="presentation?.compatible.join(', ')">
+        {{ presentation?.compatible.length ? `${presentationTexts.compatible}: ${presentation.compatible.slice(0, 2).join(', ')}${presentation.compatible.length > 2 ? ` +${presentation.compatible.length - 2}` : ''}` : presentationTexts.unassigned }}
+      </p>
       <small>{{ texts.componentOpenHint }} <ArrowRightOutlined /></small>
     </div>
     <div class="component-indicators">
@@ -80,7 +64,8 @@
 import { ArrowRightOutlined, EditFilled, StarFilled } from '@ant-design/icons-vue'
 import type { IFile } from '@modules/files/types'
 import { Page } from '@modules/windows/enums'
-import { Engines, Wheels, WinchVariants } from '@modules/xml/renderer'
+import TirePreview from '@renderer/components/tire-preview.vue'
+import { presentComponent, COMPONENT_PRESENTATION_TEXTS as presentationTexts, type ComponentPresentation } from '@renderer/utilities/component-presentation'
 import { useEditorStore } from '@renderer/pages/general/store/editor'
 import { useListStore } from '@renderer/pages/general/store/list'
 import { usePageStore } from '@renderer/pages/general/store/page'
@@ -99,7 +84,8 @@ type Props = {
 
 const props = defineProps<Props>()
 const optionCount = ref(0)
-const displayName = prettyString(props.file.name)
+const presentation = ref<ComponentPresentation>()
+const displayName = computed(() => presentation.value?.title ?? prettyString(props.file.name))
 const favorites = di.resolve(FAVORITES_TOKEN)
 const edited = di.resolve(EDITED_TOKEN)
 const { name } = storeToRefs(useListStore())
@@ -111,20 +97,17 @@ const categoryLabel = computed(() => ({
 	[Category.wheels]: texts.wheelsListTitle,
 	[Category.winches]: texts.winchesListTitle
 })[props.category])
-const isShow = computed(() => !name.value || displayName.toLowerCase().includes(name.value.toLowerCase()))
+const isShow = computed(() => !name.value || [displayName.value, props.file.name, ...(presentation.value?.variants ?? []), ...(presentation.value?.compatible ?? [])].join(' ').toLowerCase().includes(name.value.toLowerCase()))
 const isFavorite = computed(() => favorites.isFavorite(props.file))
 const isEdited = computed(() => edited.isEdited(props.file))
 
 onMounted(loadCount)
 
 async function loadCount() {
-	if (props.category === Category.engines) {
-		optionCount.value = (await Engines.from(props.file))?.Engines.length ?? 0
-	} else if (props.category === Category.wheels) {
-		optionCount.value = (await Wheels.from(props.file))?.TruckTires?.Tires.length ?? 0
-	} else {
-		optionCount.value = (await WinchVariants.from(props.file))?.Winches.length ?? 0
-	}
+	try {
+		presentation.value = await presentComponent(props.file, props.category)
+		optionCount.value = presentation.value.variants.length
+	} catch (error) { console.warn('No se pudo describir el componente.', error) }
 }
 
 function openEditor() {
@@ -211,7 +194,9 @@ function openEditor() {
 		font-size: 14px;
 		overflow: hidden;
 		text-overflow: ellipsis;
-		white-space: nowrap;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
 	}
 
 	span,
@@ -226,6 +211,9 @@ function openEditor() {
 		font-weight: 650;
 	}
 }
+
+.component-variants, .component-compatible { margin: 5px 0; font-size: 11px; line-height: 1.5; color: #475569; }
+.component-compatible { color: #64748b; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 .component-indicators {
 	position: absolute;

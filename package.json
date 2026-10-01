@@ -1,7 +1,7 @@
 {
 	"name": "snowrunner-studio-es",
 	"productName": "SnowRunner Studio",
-	"version": "2.2.0",
+	"version": "2.3.0",
 	"description": "Editor visual multilingüe para vehículos, remolques y componentes de SnowRunner.",
 	"type": "module",
 	"repository": {
@@ -42,6 +42,7 @@
 		"@electron-forge/plugin-vite": "^7.11.2",
 		"@electron-forge/publisher-github": "^7.11.2",
 		"@eslint/js": "^10.0.1",
+		"@types/three": "^0.186.0",
 		"@typescript-eslint/eslint-plugin": "^8.70.0",
 		"@typescript-eslint/parser": "^8.70.0",
 		"@vitejs/plugin-vue": "^6.0.8",
@@ -70,6 +71,7 @@
 		"fflate": "^0.8.3",
 		"pinia": "^4.0.3",
 		"tex-decoder": "^2.0.0",
+		"three": "^0.186.1",
 		"tslib": "^2.8.1",
 		"update-electron-app": "^3.3.0",
 		"vue": "^3.5.42",

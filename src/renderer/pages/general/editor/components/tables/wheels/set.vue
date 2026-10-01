@@ -3,7 +3,7 @@
     <Group
       v-for="(Tire, i) of xml.TruckTires.Tires"
       :key="`tire-${i}`"
-      :label="getGameText(Tire.GameData?.UiDesc?.UiName, texts.tire, info.mod)"
+      :label="getGameText(Tire.GameData?.UiDesc?.UiName, Tire.Name || `${texts.tire} ${i + 1}`, info.mod)"
     >
       <Info
         v-if="config.advancedMode"

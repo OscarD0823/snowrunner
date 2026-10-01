@@ -35,10 +35,18 @@ try {
 	assert(trucks.filter(name => name.endsWith('.xml')).length >= 40, 'No se extrajo el catálogo base de camiones')
 	const dlcs = await readdir(join(unpackedPath, '[media]', '_dlc'))
 	assert(dlcs.length >= 15, 'No se extrajo el contenido DLC')
+	const strings = await readdir(join(unpackedPath, '[strings]'))
+	assert(strings.includes('strings_spanish.str'), 'Se omitió la traducción española')
+	assert(strings.length >= 13, 'Se omitieron idiomas del juego')
 
 	const enginePath = join(unpackedPath, '[media]', 'classes', 'engines', 'e_us_truck_old.xml')
 	const marker = '<!-- archive verification -->'
 	await writeFile(enginePath, `${await readFile(enginePath, 'utf8')}\n${marker}`)
+	const spanishPath = join(unpackedPath, '[strings]', 'strings_spanish.str')
+	await rm(spanishPath)
+	await archive.extractMissingStrings(archivePath, unpackedPath)
+	assert((await readFile(spanishPath)).length > 0, 'La migración no recuperó el español')
+	assert((await readFile(enginePath, 'utf8')).includes(marker), 'La migración sobrescribió ajustes del usuario')
 	await writeFile(join(unpackedPath, 'edited'), '')
 	await archive.update(dir as any, file as any)
 

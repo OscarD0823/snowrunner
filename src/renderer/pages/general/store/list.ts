@@ -48,6 +48,11 @@ export const useListStore = defineStore('list', () => {
 		},
 		/** Изменить категорию в списке */
 		setCategory(newCategory: Category) {
+			if (category.value !== newCategory) {
+				source.value = SourceType.all
+				name.value = ''
+				truckType.value = ''
+			}
 			category.value = newCategory
 		},
 		setTruckType(newType: TruckType) {

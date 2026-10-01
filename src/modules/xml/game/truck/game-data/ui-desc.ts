@@ -5,6 +5,10 @@ import { innerElement } from '../../xml-with-templates'
 
 /** Блок UI. */
 export class TruckUiDesc extends BaseUiDesc {
+	/** Información visible, sin modificar la estructura regional del archivo. */
+	get displayName() { return this.UiName ?? this.DefaultRegion?.UiName }
+	get displayDescription() { return this.UiDesc ?? this.DefaultRegion?.UiDesc }
+	get displayIcon() { return this.UiIcon328x458 ?? this.DefaultRegion?.UiIcon328x458 }
 	/** Реалистичная фотография-скриншот из игры с машиной в выгодном ракурсе. */
 	@stringAttr()
 	accessor UiIcon328x458: XmlValue<string>

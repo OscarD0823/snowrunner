@@ -11,3 +11,8 @@ La lectura y escritura de contenedores ZIP usa `fflate` y `yauzl`. La
 decodificación local de texturas BC1-BC7 usa `tex-decoder` y su dependencia
 `bireader`. Estas dependencias se distribuyen bajo licencia MIT. La aplicación
 no incorpora WinRAR, 7-Zip ni otro ejecutable de archivado externo.
+
+Las vistas representativas 3D usan Three.js, distribuido bajo licencia MIT.
+La escena animada de inicio y la geometría de las miniaturas son recursos
+originales del proyecto; no se distribuyen modelos, texturas ni fotografías
+extraídas del juego. Las carátulas se obtienen de la instalación del usuario.

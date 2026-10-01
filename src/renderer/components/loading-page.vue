@@ -9,30 +9,11 @@
       class="splash"
       aria-live="polite"
     >
-      <div class="logo-orbit">
-        <span class="logo-orbit__ring" />
-        <img
-          :src="appIconUrl"
-          alt=""
-        >
-      </div>
       <div class="brand">
         <span>SnowRunner</span>
         <strong>Studio</strong>
       </div>
-      <div
-        class="terrain"
-        aria-hidden="true"
-      >
-        <span class="terrain__ridge terrain__ridge--back" />
-        <span class="terrain__ridge terrain__ridge--front" />
-        <span class="vehicle">
-          <i class="vehicle__cab" />
-          <i class="vehicle__bed" />
-          <i class="vehicle__wheel vehicle__wheel--one" />
-          <i class="vehicle__wheel vehicle__wheel--two" />
-        </span>
-      </div>
+      <StartupJourney class="loading-journey" loop />
       <Title
         class="title"
         :level="4"
@@ -66,12 +47,12 @@ import { LOADING_TOKEN, MESSAGES_TOKEN } from '@utilities/di/renderer/tokens'
 import type { ProgressProps } from 'ant-design-vue'
 import { Progress as AntProgress, Typography } from 'ant-design-vue'
 import { computed } from 'vue'
+import StartupJourney from './startup-journey.vue'
 
 const loading = di.resolve(LOADING_TOKEN)
 const messages = di.resolve(MESSAGES_TOKEN)
 
 const { Title } = Typography
-const appIconUrl = new URL('../../images/app-icon.svg', import.meta.url).href
 
 const progressStatus = computed<ProgressProps['status']>(() => {
 	if (loading.state.hasError) {
@@ -126,7 +107,7 @@ const progressStatus = computed<ProgressProps['status']>(() => {
 	.splash {
 		position: relative;
 		z-index: 2;
-		width: min(470px, calc(100vw - 48px));
+		width: min(760px, calc(100vw - 48px));
 		text-align: center;
 		animation: splash-enter 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 	}
@@ -167,6 +148,7 @@ const progressStatus = computed<ProgressProps['status']>(() => {
 		span { font-weight: 350; color: #cbd5e1; }
 		strong { font-weight: 750; }
 	}
+	.loading-journey { margin: 22px 0; box-shadow: 0 18px 45px #0006; border: 1px solid #d9bd8733; }
 
 	.terrain {
 		position: relative;

@@ -64,6 +64,7 @@
 import { AppstoreOutlined, FilterOutlined, MenuOutlined, SyncOutlined } from '@ant-design/icons-vue'
 import type { IFile } from '@modules/files/renderer'
 import { useKey } from '@renderer/utilities/use-key'
+import { refreshComponentPresentation } from '@renderer/utilities/component-presentation'
 import { di } from '@utilities/di/container'
 import { APP_TOKEN, CHECKS_TOKEN, DLC_TOKEN, IMAGES_TOKEN, MESSAGES_TOKEN, MODS_TOKEN } from '@utilities/di/renderer/tokens'
 import { Button, Segmented, Spin, Tooltip } from 'ant-design-vue'
@@ -174,6 +175,8 @@ async function scanNewContent() {
 		await dlc.init()
 		await mods.procMods()
 		di.resolve(IMAGES_TOKEN).refresh()
+		refreshComponentPresentation()
+		listStore.itemsCache.clear()
 		clearFiles()
 		await loadFiles()
 		messages.success(texts.rescanComplete)

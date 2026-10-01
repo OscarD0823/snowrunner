@@ -2,7 +2,7 @@ import { ErrorText } from '@modules/errors/enums'
 import { ProgramError } from '@modules/errors/main'
 import type { IDir, IFile } from '@modules/files/types'
 import { unzipSync, zipSync, type Unzipped } from 'fflate'
-import { copyFile, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
+import { access, copyFile, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { dirname, isAbsolute, relative, resolve } from 'node:path'
 import type { ISystemArchiver } from './types'
 
@@ -11,6 +11,19 @@ import type { ISystemArchiver } from './types'
  * fflate conserva exactamente los separadores `\\` que usa el juego.
  */
 export class ZipArchive implements ISystemArchiver {
+	/** Migra cachés antiguas sin volver a extraer ni sobrescribir XML editados. */
+	async extractMissingStrings(archivePath: string, root: string) {
+		const entries = unzipSync(new Uint8Array(await readFile(archivePath)), {
+			filter: entry => /^\[strings\][\\/]strings_[^\\/]+\.str$/i.test(entry.name)
+		})
+		for (const [name, content] of Object.entries(entries)) {
+			const target = this.safeTarget(root, name)
+			if (!target) continue
+			try { await access(target); continue } catch {}
+			await mkdir(dirname(target), { recursive: true })
+			await writeFile(target, content, { flag: 'wx' })
+		}
+	}
 	async update(dir: IDir, archive: IFile) {
 		await archive.chmod(0o777)
 
@@ -97,10 +110,7 @@ export class ZipArchive implements ISystemArchiver {
 				'[media]/classes/trucks/',
 				'[media]/classes/wheels/',
 				'[media]/classes/winches/',
-				'[strings]/strings_english.str',
-				'[strings]/strings_russian.str',
-				'[strings]/strings_chinese_simplified.str',
-				'[strings]/strings_german.str'
+				'[strings]/strings_'
 			].some(prefix => name.startsWith(prefix))
 	}
 

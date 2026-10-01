@@ -2,13 +2,14 @@
   <div class="setup">
     <div class="setup-card">
       <div class="setup-brand">
-        <span class="setup-mark">SR</span>
+        <img class="setup-mark" :src="appIcon" alt="">
         <span>SnowRunner Studio</span>
       </div>
       <h1>{{ texts.welcomeTitle }}</h1>
       <p class="intro">
         {{ texts.welcomeDescription }}
       </p>
+      <StartupJourney class="setup-journey" />
 
       <Steps
         class="steps"
@@ -60,6 +61,7 @@
 import type { IFile } from '@modules/files/renderer'
 import { ArrowRightOutlined, SafetyCertificateOutlined } from '@ant-design/icons-vue'
 import { Language } from '@renderer/components/language'
+import StartupJourney from '@renderer/components/startup-journey.vue'
 import { di } from '@utilities/di/container'
 import { APP_TOKEN, CONFIG_MANAGER_TOKEN, CONFIG_TOKEN, MESSAGES_TOKEN } from '@utilities/di/renderer/tokens'
 import { Button, Steps } from 'ant-design-vue'
@@ -68,6 +70,7 @@ import InitialSelect from './initial-select.vue'
 import { SETUP_LOCALIZATION as texts } from './localization.js'
 
 const step = ref(0)
+const appIcon = new URL('../../../../images/app-icon.svg', import.meta.url).href
 
 async function onChangeGameFolder(file?: IFile) {
 	if (!file) {
@@ -142,6 +145,7 @@ async function onChangeGameFolder(file?: IFile) {
 		color: white;
 		font-size: 11px;
 	}
+	.setup-journey { margin-top: 20px; box-shadow: 0 9px 22px rgba(15, 23, 42, .18); }
 
 	h1 {
 		margin: 22px 0 8px;
@@ -158,7 +162,7 @@ async function onChangeGameFolder(file?: IFile) {
 	}
 
 	.steps {
-		margin-top: 32px;
+		margin-top: 20px;
 		padding: 0 8%;
 
 		&-content,

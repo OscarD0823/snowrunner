@@ -32,6 +32,7 @@ export class Winch extends XMLWithTemplates {
 	/** Сила лебёдки. */
 	@properties({
 		get label() { return texts.strengthMult },
+		get desc() { return texts.strengthMultDesc },
 		limit: new Limit({ min: 0.0, max: 10.0 }),
 		areas: {
 			yellow: [2, 5],

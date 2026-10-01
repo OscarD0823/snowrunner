@@ -1,7 +1,7 @@
 <template>
   <div class="table">
     <Trailer
-      v-if="xml.Type === TruckFileType.trailer"
+      v-if="xml.Type === TruckFileType.trailer || /[\\/]trucks[\\/]trailers[\\/]/i.test(file.path)"
       :xml="xml"
       :file="file"
       @ready="$emit('ready')"

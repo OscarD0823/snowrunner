@@ -24,30 +24,38 @@ export class ItemsUtils {
 
 	private async filterByCategory(array: IFile[], category: Category): Promise<IFile[]> {
 		const classified = await Promise.all(array.map(async file => {
-			if (isComponentCategory(category)) {
-				const xml = category === Category.engines
-					? await Engines.from(file)
-					: category === Category.wheels
-						? await Wheels.from(file)
-						: await WinchVariants.from(file)
+			try {
+				if (isComponentCategory(category)) {
+					const xml = category === Category.engines
+						? await Engines.from(file)
+						: category === Category.wheels
+							? await Wheels.from(file)
+							: await WinchVariants.from(file)
 
-				return xml?.exists() ? file : undefined
+					const hasOptions = xml instanceof Engines ? xml.Engines.length
+						: xml instanceof Wheels ? xml.TruckTires?.Tires.length
+							: xml?.Winches.length
+					return xml?.exists() && hasOptions ? file : undefined
+				}
+
+				const xml = await TruckXML.from(file)
+
+				if (!xml?.exists()) {
+					return
+				}
+
+				const normalizedPath = file.path.replaceAll('\\', '/').toLowerCase()
+				const isTrailer = normalizedPath.includes('/trucks/trailers/')
+					|| xml.Type === TruckFileType.trailer
+
+				return (category === Category.trailers && isTrailer)
+					|| (category === Category.trucks && !isTrailer)
+					? file
+					: undefined
+			} catch (error) {
+				console.warn(`Se omitió un archivo que no se puede leer: ${file.path}`, error)
+				return undefined
 			}
-
-			const xml = await TruckXML.from(file)
-
-			if (!xml?.exists()) {
-				return
-			}
-
-			const normalizedPath = file.path.replaceAll('\\', '/').toLowerCase()
-			const isTrailer = normalizedPath.includes('/trucks/trailers/')
-				|| xml.Type === TruckFileType.trailer
-
-			return (category === Category.trailers && isTrailer)
-				|| (category === Category.trucks && !isTrailer)
-				? file
-				: undefined
 		}))
 
 		return classified.filter((file): file is IFile => Boolean(file))

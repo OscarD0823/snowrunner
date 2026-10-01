@@ -3,7 +3,7 @@
     <Group
       v-for="(Engine, i) of xml.Engines"
       :key="`engine-${i}`"
-      :label="getGameText(Engine.GameData?.UiDesc?.UiName, texts.engine, info.mod)"
+      :label="getGameText(Engine.GameData?.UiDesc?.UiName, `${texts.engine} ${i + 1}`, info.mod)"
     >
       <Info
         v-if="config.advancedMode"

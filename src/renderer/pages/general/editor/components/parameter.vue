@@ -17,6 +17,7 @@
         </template>
         <Text>{{ labelRef }}</Text>
       </Wrap>
+      <p v-if="descRef" class="parameter-help">{{ descRef }}</p>
     </div>
     <div
       v-if="isActive"
@@ -291,6 +292,13 @@ $parameterMinWidthAddition: calc($parameterMinWidth / 10);
 
 	.label {
 		padding-left: 30px;
+	}
+
+	.parameter-help {
+		margin: 5px 14px 0 0;
+		color: #64748b;
+		font-size: 11px;
+		line-height: 1.5;
 	}
 
 	.content {

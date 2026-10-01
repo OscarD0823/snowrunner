@@ -6,7 +6,7 @@
       :file="file"
       :has-error="hasError"
     />
-
+    <VehiclePreview v-if="xml" :xml="xml" :file="file" />
     <Table
       v-if="xml"
       :xml="xml"
@@ -33,6 +33,7 @@ import { nextTick, onMounted, ref, shallowRef } from 'vue'
 import { useEditorStore } from '../store/editor'
 import { usePageStore } from '../store/page'
 import EditorHeader from './components/header/editor-header.vue'
+import VehiclePreview from './components/vehicle-preview.vue'
 import Table from './components/tables/table.vue'
 import type { ReadyEmits, ReadyProps } from './components/utilities'
 import { filesUtils } from './utilities/files'
@@ -96,7 +97,8 @@ provideFile(file)
 resetUtils.provide(resetUtils.globalID)
 
 async function init() {
-	const result = await TruckXML.from(file)
+	let result: TruckXML | undefined
+	try { result = await TruckXML.from(file) } catch (error) { console.warn('No se pudo leer el vehículo.', error) }
 
 	if (result) {
 		xml.value = result
@@ -178,8 +180,5 @@ div.ant-collapse {
 
 :global(span.anticon-arrow-left) {
 	@include header-button;
-	position: relative;
-	margin-right: -20px;
-	left: 20px;
 }
 </style>
