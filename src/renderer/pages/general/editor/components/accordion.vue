@@ -12,7 +12,12 @@
 import { Collapse } from 'ant-design-vue'
 import { provideActive } from './utilities'
 
-const { onKeyChange } = provideActive(true)
+const emit = defineEmits<{ change: [key: string | undefined] }>()
+const active = provideActive(true)
+const onKeyChange: import('ant-design-vue').CollapseProps['onChange'] = key => {
+  active.onKeyChange?.(key)
+  emit('change', Array.isArray(key) ? key[0]?.toString() : key?.toString())
+}
 </script>
 
 <style lang="scss">

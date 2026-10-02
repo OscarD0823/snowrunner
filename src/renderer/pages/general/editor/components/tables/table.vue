@@ -11,6 +11,7 @@
       :xml="xml"
       :file="file"
       @ready="$emit('ready')"
+      @preview-context="$emit('previewContext', $event)"
     />
   </div>
 </template>
@@ -18,6 +19,7 @@
 <script lang='ts' setup>
 import type { IFile } from '@modules/files/types'
 import { TruckFileType, type TruckXML } from '@modules/xml/renderer'
+import type { VehiclePreviewContext } from '@renderer/utilities/vehicle-appearance'
 import type { ReadyEmits } from '../utilities'
 import Trailer from './trailer/trailer.vue'
 import Truck from './truck/truck.vue'
@@ -28,7 +30,7 @@ type Props = {
 }
 
 defineProps<Props>()
-defineEmits<ReadyEmits>()
+defineEmits<ReadyEmits & { previewContext: [context: VehiclePreviewContext] }>()
 </script>
 
 <style lang='scss' scoped>

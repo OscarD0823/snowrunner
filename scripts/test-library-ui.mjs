@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const repo = dirname(dirname(fileURLToPath(import.meta.url)))
-const exe = join(repo, 'out', 'SnowRunner Studio-win32-x64', 'SnowRunner Studio.exe')
+const exe = process.env.SNOWRUNNER_APP_EXE || join(repo, 'out', 'SnowRunner Studio-win32-x64', 'SnowRunner Studio.exe')
 const outputDir = join(repo, '.vite', 'library-ui-smoke')
 const dataRoot = join(outputDir, 'data')
 let initialPath = join(repo, '.snowrunner-data', 'backups', 'initial.pak')
@@ -206,6 +206,18 @@ async function back() {
 	await waitFor(`Boolean(document.querySelector('.list')?.getBoundingClientRect().height) && !document.querySelector('.vehicle-preview, .component-editor')`, 'volver a la biblioteca')
 }
 const fords = []
+const editorLayouts = []
+async function editorView(view) {
+  await evaluate(`document.getElementById('editor-${view}-tab').click()`)
+  await waitFor(`document.querySelector('.container[data-editor-view]')?.dataset.editorView === ${JSON.stringify(view)}`, `pestaña ${view}`)
+}
+async function truckGroup(icon) {
+  await evaluate(`(() => {
+    const header = [...document.querySelectorAll('#editor-settings-panel > .collapse > .ant-collapse-item > .ant-collapse-header')].find(header => header.querySelector('img')?.src.endsWith('/' + ${JSON.stringify(icon)} + '.webp'))
+    if (!header) throw new Error('Falta grupo: ' + ${JSON.stringify(icon)})
+    header.click()
+  })()`)
+}
 for (const model of ['CLT9000', 'F 750']) {
 	const found = await evaluate(`(() => {
 		const card = [...document.querySelectorAll('.card-container')].find(item => item.textContent.replace(/[- ]/g, '').toLowerCase().includes(${JSON.stringify(model.replace(/[- ]/g, '').toLowerCase())}))
@@ -222,7 +234,39 @@ for (const model of ['CLT9000', 'F 750']) {
 		card.querySelector('.card').click()
 	})()`)
 	await waitFor(`Boolean(document.querySelector('.vehicle-preview strong')?.textContent.replace(/[- ]/g, '').toLowerCase().includes(${JSON.stringify(model.replace(/[- ]/g, '').toLowerCase())}) && document.querySelector('.vehicle-preview img')?.complete && document.querySelector('.vehicle-preview img')?.naturalWidth > 0 && document.querySelector('.vehicle-preview img')?.src.includes(${JSON.stringify(model === 'CLT9000' ? 'shopimgfordclt9000' : 'shopimgford750')}))`, `foto del Ford ${model} en el editor`)
+  if (!await evaluate(`document.getElementById('editor-settings-tab').getAttribute('aria-selected') === 'true' && !document.querySelector('.drive-preview')`)) throw new Error('El editor no inicia en Ajustes sin cargar el visor')
+  if (model === 'CLT9000') {
+    await truckGroup('steering-wheel')
+    await waitFor(`Boolean(document.querySelector('#editor-settings-panel input'))`, 'campos de dirección')
+    await new Promise(resolve => setTimeout(resolve, 350))
+    for (const width of [600, 960, 1366]) {
+      await call('Emulation.setDeviceMetricsOverride', {width, height:620, deviceScaleFactor:1, mobile:false})
+      await new Promise(resolve => setTimeout(resolve, 150))
+      const layout = await evaluate(`({width:innerWidth, scroll:document.documentElement.scrollWidth, settingsHeight:document.getElementById('editor-settings-panel').getBoundingClientRect().height, visibleInputs:[...document.querySelectorAll('#editor-settings-panel input')].filter(input=>{const r=input.getBoundingClientRect();return r.height && r.top>=0 && r.bottom<=innerHeight}).length})`)
+      if (layout.scroll > layout.width || layout.settingsHeight < 620 * .60 || !layout.visibleInputs) throw new Error('Ajustes demasiado reducidos: ' + JSON.stringify(layout))
+      editorLayouts.push(layout)
+      const screenshot = await call('Page.captureScreenshot', {format:'png', captureBeyondViewport:false})
+      await writeFile(join(outputDir, `settings-${width}.png`), Buffer.from(screenshot.data, 'base64'))
+    }
+    await call('Emulation.setDeviceMetricsOverride', {width:960, height:620, deviceScaleFactor:1, mobile:false})
+    const edit = await evaluate(`(() => {
+      const parameter = [...document.querySelectorAll('#editor-settings-panel .parameter')].find(item=>item.querySelector('input') && item.querySelectorAll('.recommendations button').length && item.getBoundingClientRect().height)
+      if (!parameter) throw new Error('Falta campo editable para comprobar conservación')
+      window.__layoutField = parameter.querySelector('input')
+      const before = window.__layoutField.value
+      parameter.querySelectorAll('.recommendations button')[1].click()
+      return before
+    })()`)
+    await waitFor(`window.__layoutField.value !== ${JSON.stringify(edit)}`, 'cambio en memoria sin guardar')
+  }
+  if (model === 'CLT9000') {
+    await evaluate(`document.getElementById('editor-settings-tab').focus()`)
+    await call('Input.dispatchKeyEvent', {type:'keyDown', key:'ArrowRight', code:'ArrowRight', windowsVirtualKeyCode:39})
+    await call('Input.dispatchKeyEvent', {type:'keyUp', key:'ArrowRight', code:'ArrowRight', windowsVirtualKeyCode:39})
+    await waitFor(`document.activeElement?.id === 'editor-preview-tab' && document.querySelector('.container[data-editor-view]')?.dataset.editorView === 'preview'`, 'navegación de pestañas con teclado')
+  } else await editorView('preview')
   await waitFor(`document.querySelector('.drive-preview')?.dataset.modelState === 'ready'`, `modelo 3D del Ford ${model}`)
+  if (await evaluate(`document.querySelectorAll('.drive-preview__selectors select').length`)) throw new Error('Se muestran componentes fuera de su categoría')
   await evaluate(`document.querySelector('.drive-preview').scrollIntoView({block:'center'})`)
   await new Promise(resolve => setTimeout(resolve, 600))
   const preview = await evaluate(`({state: document.querySelector('.drive-preview').dataset.modelState, wheels: document.querySelector('.drive-preview__scene').dataset.wheels, frame: document.querySelector('.drive-preview__scene').dataset.frame, tires: document.querySelectorAll('.drive-preview__selectors select:first-child option').length, width: document.documentElement.scrollWidth, viewport: innerWidth})`)
@@ -230,10 +274,38 @@ for (const model of ['CLT9000', 'F 750']) {
   await writeFile(join(outputDir, `model-${model.replaceAll(' ', '')}.png`), Buffer.from(originalShot.data, 'base64'))
   if (Number(preview.wheels) !== (model === 'CLT9000' ? 6 : 4) || preview.width > preview.viewport) throw new Error('Incorrect 3D wheel placement or layout: ' + JSON.stringify(preview))
   if (model === 'CLT9000') {
-    await evaluate(`(() => {const s=document.querySelectorAll('.drive-preview__selectors select')[1];s.selectedIndex=1;s.dispatchEvent(new Event('change',{bubbles:true}))})()`)
-    await waitFor(`Number(document.querySelector('.drive-preview__scene').dataset.lift)>0`, 'suspensión elevada visible')
+    await evaluate(`window.__layoutCanvas = document.querySelector('.drive-preview__scene canvas')`)
+    const retainedValue = await evaluate(`window.__layoutField.value`)
+    await editorView('settings')
+    if (!await evaluate(`window.__layoutField.isConnected && window.__layoutField.value === ${JSON.stringify(retainedValue)} && window.__layoutField.getBoundingClientRect().height > 0`)) throw new Error('Se perdieron los cambios al cambiar de pestaña')
+    await evaluate(`[...document.querySelectorAll('.editor-section-select .ant-segmented-item')].find(item=>item.textContent.trim()==='Componentes').click()`)
+    await truckGroup('wheels')
+    await editorView('preview')
+    await waitFor(`document.querySelector('[data-preview-kind="wheels"] select')`, 'selector exclusivo de neumáticos')
+    await editorView('settings')
+    await truckGroup('wheels')
+    await editorView('preview')
+    if (await evaluate(`document.querySelectorAll('.drive-preview__selectors select').length`)) throw new Error('Cerrar el grupo no oculta su selector')
+    await editorView('settings')
+    await truckGroup('wheels')
+    await editorView('preview')
+    await waitFor(`document.querySelector('[data-preview-kind="wheels"] select')`, 'volver a seleccionar neumáticos')
+    if (await evaluate(`document.querySelectorAll('.drive-preview__selectors select').length !== 1 || Boolean(document.querySelector('[data-preview-kind="suspensions"]'))`)) throw new Error('El visor mezcla neumáticos y suspensión')
     await evaluate(`(() => {const s=document.querySelector('.drive-preview__selectors select');s.selectedIndex=3;s.dispatchEvent(new Event('change',{bubbles:true}))})()`)
     await waitFor(`document.querySelector('.drive-preview__scene').dataset.tire?.includes('allterrain')`, 'neumático cambiado en el modelo')
+    await editorView('settings')
+    await truckGroup('suspensions')
+    await editorView('preview')
+    await waitFor(`document.querySelector('[data-preview-kind="suspensions"] select')`, 'selector exclusivo de suspensión')
+    if (await evaluate(`document.querySelectorAll('.drive-preview__selectors select').length !== 1 || Boolean(document.querySelector('[data-preview-kind="wheels"]'))`)) throw new Error('El visor mezcla suspensión y neumáticos')
+    await evaluate(`(() => {const s=document.querySelector('.drive-preview__selectors select');s.selectedIndex=1;s.dispatchEvent(new Event('change',{bubbles:true}))})()`)
+    await waitFor(`Number(document.querySelector('.drive-preview__scene').dataset.lift)>0`, 'suspensión elevada visible')
+    await editorView('settings')
+    await truckGroup('engines')
+    await editorView('preview')
+    if (await evaluate(`document.querySelectorAll('.drive-preview__selectors select').length`)) throw new Error('El motor muestra selectores de neumáticos o suspensión')
+    if (!await evaluate(`document.querySelector('.drive-preview__scene').dataset.tire.includes('allterrain') && Number(document.querySelector('.drive-preview__scene').dataset.lift)>0`)) throw new Error('Se perdió la apariencia seleccionada')
+    if (!await evaluate(`window.__layoutCanvas === document.querySelector('.drive-preview__scene canvas')`)) throw new Error('El visor se reinicia al cambiar de pestaña')
   }
 	fords.push(await evaluate(`({name: document.querySelector('.vehicle-preview strong').textContent, image: document.querySelector('.vehicle-preview img').src, parameters: document.querySelectorAll('.parameter').length})`))
 	const shot = await call('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
@@ -323,8 +395,8 @@ for (const [label, state] of Object.entries(categories)) {
 	if (!state.editor.help || state.editor.variants.some(name => /UI_|undefined/.test(name))) throw new Error(`Falta traducción/ayuda en ${label}: ${JSON.stringify(state.editor)}`)
 }
 if (!categories['Neumáticos'].rendered || !categories['Neumáticos'].editor.preview) throw new Error('Falta el render de neumáticos')
-await writeFile(join(outputDir, 'results.json'), JSON.stringify({ truckState, fords, trailers, categories, diagnostics, networkFailures }, null, 2))
-console.log(JSON.stringify({ trucks: truckState.cards, fords, trailers, components: Object.fromEntries(Object.entries(categories).map(([label, state]) => [label, { cards: state.cards, rendered: state.rendered, editor: state.editor.title, help: state.editor.help }])), errors: diagnostics.filter(text => /error|failed|uncaught/i.test(text)), failedRequests: networkFailures.length }, null, 2))
+await writeFile(join(outputDir, 'results.json'), JSON.stringify({ truckState, fords, editorLayouts, trailers, categories, diagnostics, networkFailures }, null, 2))
+console.log(JSON.stringify({ trucks: truckState.cards, fords, editorLayouts, trailers, components: Object.fromEntries(Object.entries(categories).map(([label, state]) => [label, { cards: state.cards, rendered: state.rendered, editor: state.editor.title, help: state.editor.help }])), errors: diagnostics.filter(text => /error|failed|uncaught/i.test(text)), failedRequests: networkFailures.length }, null, 2))
 } finally {
 	socket?.close()
 	child.kill()

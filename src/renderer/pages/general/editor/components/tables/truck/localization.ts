@@ -7,12 +7,12 @@ export const TRUCK_LOCALIZATION =  loadLocalization(new Localization({
 		.en('Edit'),
 
 	generalSection: new LocalizationStrings()
-		.es('Camión y datos generales')
-		.en('Truck and general data'),
+		.es('General')
+		.en('General'),
 
 	componentsSection: new LocalizationStrings()
-		.es('Componentes: llantas, motor y más')
-		.en('Components: tires, engine and more'),
+		.es('Componentes')
+		.en('Components'),
 
 	physicsWheel: new LocalizationStrings()
 		.ru('Дополнительно')

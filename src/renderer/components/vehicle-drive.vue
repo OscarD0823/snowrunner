@@ -1,5 +1,5 @@
 <template>
-  <section class="drive-preview" :data-model-state="state">
+  <section class="drive-preview" :data-model-state="state" :data-preview-context="previewContext">
     <div class="drive-preview__toolbar">
       <strong>{{ texts.title }}</strong>
       <div>
@@ -16,13 +16,13 @@
         <span>{{ state === 'loading' ? texts.loading : texts.unavailable }}</span>
       </div>
     </div>
-    <div v-if="tireChoices.length || suspensionChoices.length" class="drive-preview__selectors">
-      <label v-if="tireChoices.length">{{ texts.tires }}
+    <div v-if="(previewContext === 'wheels' && tireChoices.length) || (previewContext === 'suspensions' && suspensionChoices.length)" class="drive-preview__selectors">
+      <label v-if="previewContext === 'wheels' && tireChoices.length" data-preview-kind="wheels">{{ texts.tires }}
         <select v-model="tireId" @change="changeTires">
           <option v-for="(item, i) in tireChoices" :key="i" :value="i">{{ item.label }}</option>
         </select>
       </label>
-      <label v-if="suspensionChoices.length">{{ texts.suspension }}
+      <label v-if="previewContext === 'suspensions' && suspensionChoices.length" data-preview-kind="suspensions">{{ texts.suspension }}
         <select v-model="suspensionId" @change="updateAppearance">
           <option v-for="(item, i) in suspensionChoices" :key="i" :value="i">{{ item.label }}</option>
         </select>
@@ -41,6 +41,7 @@ import { GAME_TEXTS_TOKEN, IMAGES_TOKEN, DIRS_TOKEN } from '@utilities/di/render
 import { useEditorStore } from '@renderer/pages/general/store/editor'
 import { DrivingStage, type Terrain } from '@renderer/utilities/driving-stage'
 import { disposeGameModel, loadGameMesh } from '@renderer/utilities/combine-mesh'
+import type { VehiclePreviewContext } from '@renderer/utilities/vehicle-appearance'
 
 const texts = loadLocalization(new Localization({
   title: new LocalizationStrings().es('Vista del vehículo').en('Vehicle view'),
@@ -59,7 +60,7 @@ const texts = loadLocalization(new Localization({
   snow: new LocalizationStrings().es('Nieve').en('Snow'),
   rock: new LocalizationStrings().es('Rocas').en('Rocks')
 }))
-const props = defineProps<{ xml: TruckXML; name: string; image: string }>()
+const props = defineProps<{ xml: TruckXML; name: string; image: string; previewContext?: VehiclePreviewContext; selectedTire?: string; selectedSuspension?: string }>()
 const images = di.resolve(IMAGES_TOKEN), gameTexts = di.resolve(GAME_TEXTS_TOKEN)
 const host = ref<HTMLElement>(), state = ref('loading'), moving = ref(!matchMedia('(prefers-reduced-motion: reduce)').matches)
 const terrain = ref<Terrain>('auto')
@@ -72,6 +73,14 @@ const tireId = ref(0), suspensionId = ref(0)
 const meshRef = computed(() => props.xml.PhysicsModel?.getAttrWT('Mesh')?.str)
 const defaultHeight = ref(0)
 watch(terrain, value => { if (stage) stage.terrain = value })
+watch(() => props.selectedTire, mesh => {
+  const index = tireChoices.value.findIndex(choice => choice.mesh === mesh)
+  if (index >= 0) { tireId.value = index; if (state.value === 'ready') void changeTires() }
+})
+watch(() => props.selectedSuspension, name => {
+  const index = suspensionChoices.value.findIndex(choice => choice.name === name)
+  if (index >= 0) { suspensionId.value = index; updateAppearance() }
+})
 onMounted(async () => {
   try {
     stage = new DrivingStage(host.value!)
@@ -85,6 +94,10 @@ onMounted(async () => {
     if (disposed) return
     stage.setBody(model)
     await loadOptions()
+    const selectedTireIndex = tireChoices.value.findIndex(choice => choice.mesh === props.selectedTire)
+    const selectedSuspensionIndex = suspensionChoices.value.findIndex(choice => choice.name === props.selectedSuspension)
+    if (selectedTireIndex >= 0) tireId.value = selectedTireIndex
+    if (selectedSuspensionIndex >= 0) suspensionId.value = selectedSuspensionIndex
     await changeTires()
     if (disposed) return
     updateAppearance(); state.value = 'ready'
@@ -191,24 +204,20 @@ function updateAppearance() {
   stage?.setAppearance((suspensionChoices.value[suspensionId.value]?.height() ?? defaultHeight.value) - defaultHeight.value, choice?.xml ? Number(choice.xml.Radius ?? 1) : 1)
 }
 function toggleMotion() { moving.value = !moving.value; if (stage) stage.moving = moving.value }
-defineExpose({
-  tire(mesh: string) { const i = tireChoices.value.findIndex(c => c.mesh === mesh); if (i >= 0) { tireId.value = i; void changeTires() } },
-  suspension(name: string) { const i = suspensionChoices.value.findIndex(c => c.name === name); if (i >= 0) { suspensionId.value = i; updateAppearance() } }
-})
 onBeforeUnmount(() => { disposed = true; request++; clearInterval(poll); stage?.dispose(); if (body) disposeGameModel(body); wheelModels.forEach(disposeGameModel) })
 </script>
 <style scoped>
-.drive-preview { border: 1px solid #d5e0e6; border-radius: 13px; overflow: hidden; width: 100%; background: #13222c; }
+.drive-preview { display: flex; flex-direction: column; flex: 1 1 0; min-height: 260px; border: 1px solid #d5e0e6; border-radius: 13px; overflow: hidden; width: 100%; background: #13222c; }
 .drive-preview__toolbar { padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; color: #e2e9ec; font-size: 12px; }
 .drive-preview__toolbar>div { display: flex; gap: 6px; }
 button, select { font: inherit; border: 1px solid #52636d; background: #213541; color: #eff4f6; border-radius: 6px; padding: 4px 8px; cursor: pointer; }
 select { min-width: 0; max-width: 100%; }
-.drive-preview__scene { height: clamp(180px, 26vh, 330px); position: relative; overflow: hidden; }
+.drive-preview__scene { flex: 1 1 auto; min-height: 180px; height: clamp(180px, 42vh, 560px); position: relative; overflow: hidden; }
 .drive-preview__scene :deep(canvas) { display: block; width: 100%; height: 100%; touch-action: none; }
 .drive-preview__fallback { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 14px; padding: 20px; background: #d5e0e8e8; color: #314859; font-size: 12px; }
 .drive-preview__fallback img { max-height: 100%; max-width: 45%; object-fit: contain; }
-.drive-preview__selectors { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 9px 12px 0; color: #c8d6dc; font-size: 11px; }
+.drive-preview__selectors { display: grid; grid-template-columns: 1fr; padding: 9px 12px 0; color: #c8d6dc; font-size: 11px; }
 label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 p { margin: 0; padding: 8px 12px; color: #99acb7; font-size: 10px; }
-@media (max-width: 700px) { .drive-preview__selectors { grid-template-columns: 1fr; } .drive-preview__scene { height: 180px; } }
+@media (max-width: 700px) { .drive-preview__toolbar { flex-wrap: wrap; } .drive-preview__scene { height: 240px; } }
 </style>

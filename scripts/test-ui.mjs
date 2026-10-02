@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const repo = dirname(dirname(fileURLToPath(import.meta.url)))
-const exe = join(repo, 'out', 'SnowRunner Studio-win32-x64', 'SnowRunner Studio.exe')
+const exe = process.env.SNOWRUNNER_APP_EXE || join(repo, 'out', 'SnowRunner Studio-win32-x64', 'SnowRunner Studio.exe')
 const outputDir = join(repo, '.vite', 'ui-smoke')
 const appData = join(outputDir, 'appdata')
 const port = 9333

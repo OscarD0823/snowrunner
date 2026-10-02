@@ -9,7 +9,7 @@
       ]"
     />
   </div>
-  <Accordion>
+  <Accordion @change="selectPreviewContext">
     <Group
       v-if="xml.GameData?.UiDesc"
       v-show="activeSection === 'general'"
@@ -243,7 +243,8 @@ import { di } from '@utilities/di/container'
 import { CONFIG_TOKEN } from '@utilities/di/renderer/tokens'
 import { saveUtils } from '../../../utilities/save'
 import { Segmented } from 'ant-design-vue'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import type { VehiclePreviewContext } from '@renderer/utilities/vehicle-appearance'
 import Accordion from '../../accordion.vue'
 import Coords from '../../coords/coords.vue'
 import Extra from '../../extra/extra.vue'
@@ -272,9 +273,16 @@ type Props = {
 
 const config = di.resolve(CONFIG_TOKEN)
 const activeSection = ref<'general' | 'components'>('general')
+const activeGroup = ref<string>()
 const { xml, file } = defineProps<Props>()
-const emit = defineEmits<ReadyEmits>()
+const emit = defineEmits<ReadyEmits & { previewContext: [context: VehiclePreviewContext] }>()
 const { ready, inProgress } = useFilesReady(emit)
+watch(activeSection, () => selectPreviewContext(activeGroup.value))
+
+function selectPreviewContext(key: string | undefined) {
+  activeGroup.value = key
+  emit('previewContext', activeSection.value === 'components' && (key === 'wheels' || key === 'suspensions') ? key : undefined)
+}
 
 saveUtils.useOnSave(() => file.write(xml.baseXML))
 
@@ -323,13 +331,13 @@ function getCompatibleWheelsLabel(nth: number, type?: string) {
 
 	@media (max-width: 760px) {
 		top: -12px;
-		align-items: stretch;
-		flex-direction: column;
+		align-items: center;
+		padding: 8px 10px;
 		gap: 8px;
 		margin-bottom: 10px;
 
 		:deep(.ant-segmented) {
-			width: 100%;
+			flex: 1;
 		}
 
 		:deep(.ant-segmented-group),

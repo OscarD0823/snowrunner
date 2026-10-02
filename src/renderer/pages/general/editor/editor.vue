@@ -1,17 +1,52 @@
 <template>
-  <div class="container">
+  <div class="container" :data-editor-view="view">
     <EditorHeader
       ref="header"
       :xml="xml"
       :file="file"
       :has-error="hasError"
     />
-    <VehiclePreview v-if="xml" ref="preview" :xml="xml" :file="file" />
+    <VehiclePreview v-if="xml" ref="preview" :xml="xml" :file="file" :expanded="view === 'preview'" :preview-context="previewContext">
+      <template #actions>
+        <nav class="editor-view-tabs" role="tablist" :aria-label="viewTexts.navigation" :title="viewTexts.hint">
+          <button
+            id="editor-settings-tab"
+            role="tab"
+            :aria-selected="view === 'settings'"
+            aria-controls="editor-settings-panel"
+            :tabindex="view === 'settings' ? 0 : -1"
+            @click="view = 'settings'"
+            @keydown.right.prevent="focusView('preview')"
+            @keydown.left.prevent="focusView('preview')"
+            @keydown.home.prevent="focusView('settings')"
+            @keydown.end.prevent="focusView('preview')"
+          >{{ viewTexts.settings }}</button>
+          <button
+            id="editor-preview-tab"
+            role="tab"
+            :aria-selected="view === 'preview'"
+            aria-controls="editor-preview-panel"
+            :tabindex="view === 'preview' ? 0 : -1"
+            @click="view = 'preview'"
+            @keydown.right.prevent="focusView('settings')"
+            @keydown.left.prevent="focusView('settings')"
+            @keydown.home.prevent="focusView('settings')"
+            @keydown.end.prevent="focusView('preview')"
+          >{{ viewTexts.preview }}</button>
+        </nav>
+      </template>
+    </VehiclePreview>
     <Table
       v-if="xml"
+      v-show="view === 'settings'"
+      id="editor-settings-panel"
+      role="tabpanel"
+      aria-labelledby="editor-settings-tab"
+      tabindex="0"
       :xml="xml"
       :file="file"
       @ready="$emit('ready')"
+      @preview-context="previewContext = $event"
     />
     <Spin
       v-else-if="!hasError"
@@ -30,7 +65,8 @@ import { di } from '@utilities/di/container'
 import { DIRS_TOKEN, DLC_TOKEN, MODS_TOKEN } from '@utilities/di/renderer/tokens'
 import { storeToRefs } from 'pinia'
 import { nextTick, onMounted, provide, ref, shallowRef } from 'vue'
-import { VEHICLE_APPEARANCE } from '@renderer/utilities/vehicle-appearance'
+import { VEHICLE_APPEARANCE, type VehiclePreviewContext } from '@renderer/utilities/vehicle-appearance'
+import { loadLocalization, Localization, LocalizationStrings } from '@localization/renderer'
 import { useEditorStore } from '../store/editor'
 import { usePageStore } from '../store/page'
 import EditorHeader from './components/header/editor-header.vue'
@@ -76,8 +112,22 @@ const { route } = usePageStore()
 const xml = shallowRef<TruckXML | null>(null)
 const header = ref<InstanceType<typeof EditorHeader> | null>(null)
 const hasError = ref<boolean>(false)
+const view = ref<'settings' | 'preview'>('settings')
+const previewContext = ref<VehiclePreviewContext>()
+const viewTexts = loadLocalization(new Localization({
+  settings: new LocalizationStrings().es('Ajustes').en('Settings'),
+  preview: new LocalizationStrings().es('Visor del vehículo').en('Vehicle viewer'),
+  navigation: new LocalizationStrings().es('Vistas del editor').en('Editor views'),
+  hint: new LocalizationStrings().es('Los cambios se mantienen al cambiar de pestaña.').en('Changes are kept when switching tabs.')
+}))
 const preview = ref<InstanceType<typeof VehiclePreview>>()
 provide(VEHICLE_APPEARANCE, { tire: mesh => preview.value?.tire(mesh), suspension: name => preview.value?.suspension(name) })
+
+async function focusView(value: 'settings' | 'preview') {
+  view.value = value
+  await nextTick()
+  document.getElementById(value === 'settings' ? 'editor-settings-tab' : 'editor-preview-tab')?.focus()
+}
 
 const file = (props.file ?? prevFile.value)!
 
@@ -114,6 +164,7 @@ async function init() {
 }
 
 async function update() {
+	previewContext.value = undefined
 	xml.value = null
 
 	await nextTick()
@@ -165,7 +216,32 @@ div.ant-collapse {
 	display: flex;
 	flex: 1 1 0;
 	flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
+
+  > header { flex: 0 0 auto; }
+}
+
+.editor-view-tabs {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 6px;
+  padding: 0;
+  min-width: 0;
+
+  button {
+    padding: 9px 12px;
+    border: 1px solid #dbe4ed;
+    border-radius: 9px;
+    background: #fff;
+    color: #526176;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  button[aria-selected='true'] { background: #fff2e5; border-color: #fb923c; color: #9a3412; font-weight: 650; }
+  button:focus-visible { outline: 2px solid #ea580c; outline-offset: 2px; }
 }
 
 .spin-container {

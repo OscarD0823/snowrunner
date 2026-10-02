@@ -37,7 +37,7 @@
         />
       </div>
     </header>
-    <section class="workspace-bar">
+    <section v-if="pageStore.page !== Page.editor" class="workspace-bar">
       <nav
         class="workspace-navigation"
         :aria-label="texts.brandSubtitle"
@@ -107,7 +107,8 @@ const whatsNewIsOpen = ref(false)
 
 /** Отсутствует `initial.pak`. */
 const initialNotFound = !config.initialPath
-const { route } = usePageStore()
+const pageStore = usePageStore()
+const { route } = pageStore
 const listStore = useListStore()
 const { setCategory, setSource } = listStore
 

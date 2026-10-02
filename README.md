@@ -6,8 +6,11 @@ La aplicación permite explorar vehículos y remolques, cambiar sus parámetros 
 
 ## Estado del proyecto
 
-La versión `2.4.0` incluye:
+La versión `2.4.1` incluye:
 
+- pestaña principal de Ajustes con más espacio para los campos y visor del vehículo como segunda pestaña;
+- cambios en memoria y selección visual conservados al alternar entre las dos vistas;
+- selector de neumáticos o suspensión visible únicamente al editar ese componente;
 - animación del camión también dentro de la biblioteca;
 - visor 3D de los modelos originales de camiones y remolques, leído localmente de `shared.pak` y `editor.pak`;
 - neumáticos y llantas originales colocados en las posiciones declaradas por cada camión;
