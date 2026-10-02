@@ -230,39 +230,6 @@ $parameterMinWidthAddition: calc($parameterMinWidth / 10);
 	}
 }
 
-@media screen and (max-width: 760px) {
-	.parameter {
-		min-width: 100%;
-		padding: 8px 4px;
-		align-items: stretch;
-		flex-direction: column;
-		gap: 8px;
-
-		.label,
-		.content {
-			width: 100%;
-		}
-
-		.label {
-			padding-left: 0;
-			font-weight: 650;
-		}
-
-		.content {
-			align-items: stretch;
-			justify-content: flex-start;
-			text-align: left;
-		}
-
-		.value-guide {
-			align-items: flex-start;
-
-			.recommendations {
-				justify-content: flex-start;
-			}
-		}
-	}
-}
 </style>
 
 <style lang='scss' scoped>
@@ -281,7 +248,7 @@ $parameterMinWidthAddition: calc($parameterMinWidth / 10);
 	justify-content: space-between;
 	align-items: center;
 	flex: 1 1 0;
-	min-width: $parameterMinWidth;
+	min-width: min($parameterMinWidth, 100%);
 	min-height: 40px;
 
 	.label,
@@ -372,6 +339,26 @@ $parameterMinWidthAddition: calc($parameterMinWidth / 10);
 
 		&:nth-child(2n) {
 			flex: 1 1 0 !important;
+		}
+	}
+}
+
+@media screen and (max-width: 760px) {
+	.parameter {
+		min-width: 100%;
+		width: 100%;
+		padding: 10px 12px;
+		align-items: stretch;
+		flex-direction: column;
+		gap: 8px;
+
+		.label,
+		.content { width: 100%; }
+		.label { padding-left: 0; font-weight: 650; }
+		.content { align-items: stretch; justify-content: flex-start; text-align: left; }
+		.value-guide {
+			align-items: flex-start;
+			.recommendations { justify-content: flex-start; }
 		}
 	}
 }

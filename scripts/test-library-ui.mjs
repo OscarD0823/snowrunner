@@ -242,8 +242,8 @@ for (const model of ['CLT9000', 'F 750']) {
     for (const width of [600, 960, 1366]) {
       await call('Emulation.setDeviceMetricsOverride', {width, height:620, deviceScaleFactor:1, mobile:false})
       await new Promise(resolve => setTimeout(resolve, 150))
-      const layout = await evaluate(`({width:innerWidth, scroll:document.documentElement.scrollWidth, settingsHeight:document.getElementById('editor-settings-panel').getBoundingClientRect().height, visibleInputs:[...document.querySelectorAll('#editor-settings-panel input')].filter(input=>{const r=input.getBoundingClientRect();return r.height && r.top>=0 && r.bottom<=innerHeight}).length})`)
-      if (layout.scroll > layout.width || layout.settingsHeight < 620 * .60 || !layout.visibleInputs) throw new Error('Ajustes demasiado reducidos: ' + JSON.stringify(layout))
+      const layout = await evaluate(`(() => { const panel = document.getElementById('editor-settings-panel'); const r = panel.getBoundingClientRect(); return {width:innerWidth, scroll:document.documentElement.scrollWidth, settingsHeight:r.height, panelWidth:panel.clientWidth, panelScroll:panel.scrollWidth, outsideInputs:[...panel.querySelectorAll('input')].filter(input=>{const box=input.getBoundingClientRect();return box.height && (box.left<r.left || box.right>r.right)}).length, visibleInputs:[...panel.querySelectorAll('input')].filter(input=>{const box=input.getBoundingClientRect();return box.height && box.top>=0 && box.bottom<=innerHeight}).length} })()`)
+      if (layout.scroll > layout.width || layout.panelScroll > layout.panelWidth + 1 || layout.outsideInputs || layout.settingsHeight < 620 * .60 || !layout.visibleInputs) throw new Error('Ajustes demasiado reducidos o con desplazamiento lateral: ' + JSON.stringify(layout))
       editorLayouts.push(layout)
       const screenshot = await call('Page.captureScreenshot', {format:'png', captureBeyondViewport:false})
       await writeFile(join(outputDir, `settings-${width}.png`), Buffer.from(screenshot.data, 'base64'))
@@ -362,6 +362,12 @@ for (const label of ['Motores', 'Neumáticos', 'Cabrestantes']) {
 	await waitFor(`[...document.querySelectorAll('.component-editor .parameter-help')].some(help => help.getBoundingClientRect().height > 0) && [...document.querySelectorAll('.component-editor input')].some(input => input.getBoundingClientRect().height > 0)`, `campos visibles de ${label}`)
 	await new Promise(resolve => setTimeout(resolve, 300))
 	categories[label].editor = await evaluate(`({title: document.querySelector('.header-title').textContent, variants: [...document.querySelectorAll('.component-editor .ant-collapse-header')].map(item => item.textContent.trim()), labels: [...document.querySelectorAll('.component-editor .parameter .label')].map(item => item.textContent.trim()), help: document.querySelectorAll('.component-editor .parameter-help').length, preview: Boolean(document.querySelector('.component-editor .tire-preview img')?.naturalWidth)})`)
+  await call('Emulation.setDeviceMetricsOverride', {width:600, height:620, deviceScaleFactor:1, mobile:false})
+  await new Promise(resolve => setTimeout(resolve, 350))
+  const componentLayout = await evaluate(`(() => {const body=document.querySelector('.component-editor__body');return {width:body.clientWidth,scroll:body.scrollWidth}})()`)
+  if (componentLayout.scroll > componentLayout.width + 1) throw new Error('Desplazamiento lateral en ' + label + ': ' + JSON.stringify(componentLayout))
+  categories[label].editor.narrowLayout = componentLayout
+  await call('Emulation.setDeviceMetricsOverride', {width:960, height:620, deviceScaleFactor:1, mobile:false})
 	const editorShot = await call('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
 	await writeFile(join(outputDir, `${label}-editor.png`), Buffer.from(editorShot.data, 'base64'))
 	await back()
