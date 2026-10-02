@@ -4,6 +4,7 @@
       v-for="(Tire, i) of xml.TruckTires.Tires"
       :key="`tire-${i}`"
       :label="getGameText(Tire.GameData?.UiDesc?.UiName, Tire.Name || `${texts.tire} ${i + 1}`, info.mod)"
+      @click="appearance?.tire(Tire.getAttrWT('Mesh')?.str ?? '')"
     >
       <Info
         v-if="config.advancedMode"
@@ -49,6 +50,9 @@ import type { ReadyEmits, ReadyProps } from '../../utilities'
 import { getGameText, useReady } from '../../utilities'
 import UnlockPreset from '../unlock-preset/unlock-preset.vue'
 import { WHEELS_LOCALIZATION as texts } from './localization'
+import { inject } from 'vue'
+import { VEHICLE_APPEARANCE } from '@renderer/utilities/vehicle-appearance'
+const appearance = inject(VEHICLE_APPEARANCE, undefined)
 
 export type WheelSetProps = ReadyProps & Props
 

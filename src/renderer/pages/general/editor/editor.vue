@@ -6,7 +6,7 @@
       :file="file"
       :has-error="hasError"
     />
-    <VehiclePreview v-if="xml" :xml="xml" :file="file" />
+    <VehiclePreview v-if="xml" ref="preview" :xml="xml" :file="file" />
     <Table
       v-if="xml"
       :xml="xml"
@@ -29,7 +29,8 @@ import { useKey } from '@renderer/utilities/use-key'
 import { di } from '@utilities/di/container'
 import { DIRS_TOKEN, DLC_TOKEN, MODS_TOKEN } from '@utilities/di/renderer/tokens'
 import { storeToRefs } from 'pinia'
-import { nextTick, onMounted, ref, shallowRef } from 'vue'
+import { nextTick, onMounted, provide, ref, shallowRef } from 'vue'
+import { VEHICLE_APPEARANCE } from '@renderer/utilities/vehicle-appearance'
 import { useEditorStore } from '../store/editor'
 import { usePageStore } from '../store/page'
 import EditorHeader from './components/header/editor-header.vue'
@@ -75,6 +76,8 @@ const { route } = usePageStore()
 const xml = shallowRef<TruckXML | null>(null)
 const header = ref<InstanceType<typeof EditorHeader> | null>(null)
 const hasError = ref<boolean>(false)
+const preview = ref<InstanceType<typeof VehiclePreview>>()
+provide(VEHICLE_APPEARANCE, { tire: mesh => preview.value?.tire(mesh), suspension: name => preview.value?.suspension(name) })
 
 const file = (props.file ?? prevFile.value)!
 
@@ -162,6 +165,7 @@ div.ant-collapse {
 	display: flex;
 	flex: 1 1 0;
 	flex-direction: column;
+  overflow-y: auto;
 }
 
 .spin-container {

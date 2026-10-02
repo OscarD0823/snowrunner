@@ -9,4 +9,5 @@ export function publishImages() {
 	const getInstance = () => instance ??= di.resolve(IMAGES_TOKEN)
 
 	publishInstanceFunction('Images', 'prepare', getInstance)
+  publishInstanceFunction('Images', 'prepareMesh', getInstance)
 }

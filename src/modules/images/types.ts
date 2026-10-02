@@ -4,6 +4,7 @@ import type { Category } from '@renderer/pages/general/enums'
 
 /** Работа с картинками. [renderer] */
 export interface IImages {
+  getMesh(reference: string): Promise<GameMeshAsset | undefined>
 	/**
 	 * Получить путь к картинке для данного файла автомобиля/прицепа.
 	 * @param category Категория файла.
@@ -50,4 +51,7 @@ export interface IImages {
 /** Preparación de carátulas originales. [main] */
 export interface IMainImages {
 	prepare(initialPath: string): Promise<Record<string, string>>
+  prepareMesh(initialPath: string, reference: string): Promise<GameMeshAsset | undefined>
 }
+
+export type GameMeshAsset = { meshUrl: string; textures: Record<string, string> }

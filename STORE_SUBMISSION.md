@@ -1,5 +1,7 @@
 # Preparación para Microsoft Store
 
+> Documento histórico. Desde la versión 2.4.0 se distribuye únicamente en GitHub; los comandos MSIX ya no están activos.
+
 La variante de tienda se publica como **Offroad XML Studio**. El nombre evita presentar la aplicación como un producto oficial; la ficha debe usar “compatible con SnowRunner” únicamente como explicación de interoperabilidad.
 
 ## Lo que ya está preparado

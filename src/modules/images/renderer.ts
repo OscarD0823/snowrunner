@@ -13,6 +13,13 @@ import type { IImages } from './types'
 export class Images implements IImages {
 	@mainMethod()
 	private prepare!: MainImages['prepare']
+  @mainMethod()
+  private prepareMesh!: MainImages['prepareMesh']
+
+  async getMesh(reference: string) {
+    const initialPath = di.resolve(CONFIG_TOKEN).initialPath
+    return initialPath ? this.prepareMesh(initialPath, reference) : undefined
+  }
 	/** Модификации игры. */
 	@inject(MODS_TOKEN)
 	private readonly mods!: Mods

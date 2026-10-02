@@ -39,6 +39,8 @@ export default defineConfig(forgeEnv => {
 			pluginVue(),
 			viteStaticCopy({
 				targets: [
+          { src: 'THIRD_PARTY_NOTICES.md', dest: '.', rename: 'THIRD_PARTY_NOTICES.md' },
+          { src: 'LICENSE', dest: '.', rename: 'LICENSE' },
 					{ src: `${paths.images}/icons/*`, dest: '../src/renderer/pages/images/icons', rename: { stripBase: true } },
 					// Las carátulas del juego se extraen de la instalación del usuario.
 					// El paquete solo conserva fondos genéricos creados para la aplicación.

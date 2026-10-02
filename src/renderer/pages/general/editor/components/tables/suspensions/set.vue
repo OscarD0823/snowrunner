@@ -4,6 +4,7 @@
       v-for="(SuspensionSet, i) of xml.Sets"
       :key="`suspension-set-${i}`"
       :label="getGameText(SuspensionSet.GameData?.UiDesc?.UiName, texts.suspensionSet, info.mod)"
+      @click="appearance?.suspension(SuspensionSet.Name ?? '')"
     >
       <Info
         v-if="config.advancedMode"
@@ -36,6 +37,9 @@
 <script lang='ts' setup>
 import type { IFile } from '@modules/files/renderer'
 import type { Suspensions as SuspensionsXML } from '@modules/xml/renderer'
+import { inject } from 'vue'
+import { VEHICLE_APPEARANCE } from '@renderer/utilities/vehicle-appearance'
+const appearance = inject(VEHICLE_APPEARANCE, undefined)
 import { WheelLocation } from '@modules/xml/renderer'
 import { di } from '@utilities/di/container'
 import { CONFIG_TOKEN } from '@utilities/di/renderer/tokens'

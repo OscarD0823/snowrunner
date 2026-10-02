@@ -1,7 +1,7 @@
 {
 	"name": "snowrunner-studio-es",
 	"productName": "SnowRunner Studio",
-	"version": "2.3.0",
+	"version": "2.4.0",
 	"description": "Editor visual multilingüe para vehículos, remolques y componentes de SnowRunner.",
 	"type": "module",
 	"repository": {
@@ -12,9 +12,6 @@
 	"scripts": {
 		"package": "electron-forge package --platform=win32 --arch=x64",
 		"build:exe": "cross-env NODE_ENV=production electron-forge make --platform=win32 --arch=x64",
-		"build:msix": "cross-env NODE_ENV=production SNOWRUNNER_STORE_BUILD=true electron-forge make --platform=win32 --arch=x64",
-		"build:store": "cross-env NODE_ENV=production SNOWRUNNER_STORE_BUILD=true SNOWRUNNER_STORE_UPLOAD=true electron-forge make --platform=win32 --arch=x64",
-		"assets:store": "electron scripts/generate-store-assets.cjs",
 		"make": "cross-env NODE_ENV=production electron-forge make --platform=win32 --arch=x64",
 		"package-prod": "npm i && cross-env NODE_ENV=production electron-forge package --platform=win32 --arch=x64",
 		"start": "cross-env NODE_ENV=development electron-forge start",
@@ -23,6 +20,7 @@
 		"test:images": "esbuild scripts/test-images.ts --bundle --platform=node --format=cjs --external:electron --outfile=.vite/test-images.cjs && electron .vite/test-images.cjs",
 		"test:pct": "esbuild scripts/test-pct-images.ts --bundle --platform=node --format=cjs --target=es2022 --external:electron --outfile=.vite/test-pct-images.cjs && electron .vite/test-pct-images.cjs",
 		"test:ui": "node scripts/test-ui.mjs && node scripts/test-library-ui.mjs",
+		"test:models": "esbuild scripts/test-models.ts --bundle --platform=node --format=esm --outfile=.vite/test-models.mjs && node .vite/test-models.mjs",
 		"lint": "eslint src/**",
 		"lint:fix": "npm run lint -- --fix",
 		"check": "tsc --project src/tsconfig.json --noEmit && vue-tsc --project src/tsconfig.json --noEmit"
@@ -37,7 +35,6 @@
 	},
 	"devDependencies": {
 		"@electron-forge/cli": "^7.11.2",
-		"@electron-forge/maker-msix": "^7.11.2",
 		"@electron-forge/maker-squirrel": "^7.11.2",
 		"@electron-forge/plugin-vite": "^7.11.2",
 		"@electron-forge/publisher-github": "^7.11.2",

@@ -6,7 +6,14 @@ La aplicación permite explorar vehículos y remolques, cambiar sus parámetros 
 
 ## Estado del proyecto
 
-La versión `2.3.0` incluye:
+La versión `2.4.0` incluye:
+
+- animación del camión también dentro de la biblioteca;
+- visor 3D de los modelos originales de camiones y remolques, leído localmente de `shared.pak` y `editor.pak`;
+- neumáticos y llantas originales colocados en las posiciones declaradas por cada camión;
+- selección visual de neumáticos compatibles y suspensión, sin guardar automáticamente esos cambios;
+- ruedas en movimiento, cámara giratoria, acercamiento, pausa y recorrido entre bosque, barro, rocas y nieve;
+- respeto por movimiento reducido y liberación del visor al salir del editor;
 
 - interfaz y descripciones técnicas completas en español;
 - asistente inicial que explica cómo localizar `initial.pak`;
@@ -38,7 +45,7 @@ La versión `2.3.0` incluye:
 - bibliotecas independientes y editables para motores, neumáticos y cabrestantes;
 - carátulas oficiales obtenidas solo desde `gfx.pak`, con validación e invalidación del caché al buscar contenido nuevo;
 - motor ZIP integrado que conserva las rutas internas de SnowRunner y elimina la redistribución no autorizada de WinRAR;
-- variante MSIX para Microsoft Store bajo el nombre **Offroad XML Studio**, sin archivos ni carátulas del juego dentro del paquete.
+- distribución únicamente en GitHub, con instalador y actualizaciones automáticas.
 
 Los nombres de vehículos y objetos se leen de los textos incluidos por el propio juego. Cuando SnowRunner no proporciona una cadena en español, se utiliza el nombre inglés.
 
@@ -61,16 +68,13 @@ npm run build:exe
 
 El resultado se guarda dentro de `out/make/squirrel.windows/x64`. El archivo `SnowRunner Studio Setup.exe` instala la aplicación y crea sus accesos directos.
 
-Para crear un MSIX local de prueba:
-
-```powershell
-npm run assets:store
-npm run build:msix
-```
-
-La entrega final de Microsoft Store necesita la identidad exacta de Partner Center. Consulta `STORE_SUBMISSION.md`.
+La distribución actual es exclusiva de GitHub. La preparación anterior para Microsoft Store ya no está activa.
 
 ## Publicar una versión
+
+El visor usa la geometría y los mapas de color originales disponibles localmente. La iluminación, los terrenos y el movimiento son una escena propia: no ejecuta el motor de SnowRunner, no calcula agarre ni reproduce su física. Los selectores del visor son de previsualización; los parámetros editables se guardan únicamente con **Guardar**. No se simulan cambios visibles de motor. Los modelos compilados personalizados de mods todavía usan su carátula. Las bibliotecas conservan miniaturas representativas para neumáticos y remolques; el modelo original se carga dentro del editor.
+
+En la instalación comprobada se verificó la lectura de 184 modelos distintos del catálogo. Los archivos extraídos permanecen en la caché local `game-models`; no entran en GitHub ni en el instalador.
 
 Actualiza la versión de `package.json`, crea un tag con el formato `vX.Y.Z` y súbelo a GitHub. El flujo de GitHub Actions compila el instalador y adjunta `Setup.exe`, el paquete `.nupkg` y `RELEASES` a una nueva publicación. Las instalaciones existentes consultan esas publicaciones al abrirse y cada 30 minutos.
 

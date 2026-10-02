@@ -1,11 +1,13 @@
 <template>
   <section class="vehicle-preview">
     <img :src="src" :alt="name" :title="representative ? texts.preview : name" @error="useDefault">
-    <div>
+    <div class="vehicle-preview__info">
       <strong>{{ name }}</strong>
       <p v-if="description">{{ description }}</p>
       <small v-if="representative">{{ texts.preview }}</small>
+      <button class="view-toggle" @click="expanded = !expanded">{{ expanded ? '▾' : '▸' }} {{ driveText }}</button>
     </div>
+    <VehicleDrive v-if="expanded" ref="drive" :xml="xml" :name="name" :image="src" />
   </section>
 </template>
 <script setup lang="ts">
@@ -17,8 +19,13 @@ import { di } from '@utilities/di/container'
 import { GAME_TEXTS_TOKEN, IMAGES_TOKEN, MODS_TOKEN } from '@utilities/di/renderer/tokens'
 import { prettyString } from '@utilities/strings/renderer'
 import { computed, ref, watch } from 'vue'
+import VehicleDrive from '@renderer/components/vehicle-drive.vue'
+import { loadLocalization, Localization, LocalizationStrings } from '@localization/renderer'
 
 const props = defineProps<{ file: IFile; xml: TruckXML }>()
+const expanded = ref(true), drive = ref<InstanceType<typeof VehicleDrive>>()
+const { driveText } = loadLocalization(new Localization({ driveText: new LocalizationStrings().es('Vista en movimiento').en('Driving view') }))
+defineExpose({ tire: (mesh: string) => drive.value?.tire(mesh), suspension: (name: string) => drive.value?.suspension(name) })
 const images = di.resolve(IMAGES_TOKEN)
 const gameTexts = di.resolve(GAME_TEXTS_TOKEN)
 const mod = di.resolve(MODS_TOKEN).getModID(props.file)
@@ -34,7 +41,9 @@ watch(() => props.xml, async xml => {
 function useDefault() { src.value = images.getDefault(category.value) }
 </script>
 <style scoped>
-.vehicle-preview { display: flex; flex: 0 0 auto; align-items: center; gap: 18px; margin: 12px 20px 0; padding: 10px 18px; border: 1px solid #dbe4ed; border-radius: 14px; background: linear-gradient(120deg, #fff, #eef4f8); }
+.vehicle-preview { display: flex; flex-wrap: wrap; flex: 0 0 auto; align-items: center; gap: 10px 18px; margin: 12px 20px 0; padding: 10px 18px; border: 1px solid #dbe4ed; border-radius: 14px; background: linear-gradient(120deg, #fff, #eef4f8); }
+.vehicle-preview__info { flex: 1; min-width: 0; }
+.view-toggle { display: block; margin-top: 4px; background: transparent; border: 0; color: #a54810; cursor: pointer; font-size: 12px; }
 img { width: 110px; height: 118px; flex: 0 0 auto; object-fit: contain; }
 strong { color: #162439; font-size: 17px; }
 p { max-width: 800px; margin: 6px 0; color: #526176; font-size: 12px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
