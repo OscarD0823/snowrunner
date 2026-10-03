@@ -224,7 +224,7 @@ $parameterMinWidthAddition: calc($parameterMinWidth / 10);
 	}
 }
 
-@media screen and (min-width: calc($parameterMinWidth * 2 + $parameterMinWidthAddition)) {
+@container vehicle-settings (min-width: 1365px) {
 	.table .ant-collapse-content .ant-collapse-content-box {
 		justify-content: space-between;
 	}
@@ -320,7 +320,7 @@ $parameterMinWidthAddition: calc($parameterMinWidth / 10);
 		}
 	}
 
-	@media screen and (min-width: calc($parameterMinWidth * 2 + $parameterMinWidthAddition)) {
+	@container vehicle-settings (min-width: 1365px) {
 		.content {
 			justify-content: flex-end;
 			padding-right: 40px;
@@ -328,7 +328,7 @@ $parameterMinWidthAddition: calc($parameterMinWidth / 10);
 	}
 }
 
-@media screen and (min-width: calc($parameterMinWidth * 2 + $parameterMinWidthAddition)) {
+@container vehicle-settings (min-width: 1365px) {
 	.parameter {
 		width: 50%;
 		min-width: 50%;
@@ -343,7 +343,7 @@ $parameterMinWidthAddition: calc($parameterMinWidth / 10);
 	}
 }
 
-@media screen and (max-width: 760px) {
+@container vehicle-settings (max-width: 700px) {
 	.parameter {
 		min-width: 100%;
 		width: 100%;
@@ -361,5 +361,12 @@ $parameterMinWidthAddition: calc($parameterMinWidth / 10);
 			.recommendations { justify-content: flex-start; }
 		}
 	}
+}
+
+@media screen and (max-width: 760px) {
+  .parameter { min-width: 100%; width: 100%; padding: 10px 12px; flex-direction: column; gap: 8px; align-items: stretch; }
+  .parameter .label, .parameter .content { width: 100%; }
+  .parameter .label { padding-left: 0; font-weight: 650; }
+  .parameter .content { text-align: left; justify-content: flex-start; }
 }
 </style>

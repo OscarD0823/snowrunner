@@ -6,10 +6,13 @@ La aplicación permite explorar vehículos y remolques, cambiar sus parámetros 
 
 ## Estado del proyecto
 
-La versión `2.4.2` incluye:
+La versión `2.5.0` incluye:
 
-- pestaña principal de Ajustes con más espacio para los campos y visor del vehículo como segunda pestaña;
-- cambios en memoria y selección visual conservados al alternar entre las dos vistas;
+- vehículo siempre visible en un panel lateral y ajustes con desplazamiento independiente a su derecha;
+- cámara que encuadra el modelo completo, también al dividir la pantalla o cambiar ruedas y suspensión;
+- materiales originales con relieve, rugosidad, metal y oclusión, conservando los canales PBR definidos por Saber;
+- selección correcta de la cabina exterior, sin superponer mallas interiores ni superficies auxiliares de agua;
+- selección separada de las ruedas delanteras y dobles traseras, con la llanta predeterminada del XML;
 - selector de neumáticos o suspensión visible únicamente al editar ese componente;
 - campos, etiquetas y recomendaciones adaptables al ancho del editor, sin desplazamiento lateral en media pantalla;
 - animación del camión también dentro de la biblioteca;
@@ -76,7 +79,9 @@ La distribución actual es exclusiva de GitHub. La preparación anterior para Mi
 
 ## Publicar una versión
 
-El visor usa la geometría y los mapas de color originales disponibles localmente. La iluminación, los terrenos y el movimiento son una escena propia: no ejecuta el motor de SnowRunner, no calcula agarre ni reproduce su física. Los selectores del visor son de previsualización; los parámetros editables se guardan únicamente con **Guardar**. No se simulan cambios visibles de motor. Los modelos compilados personalizados de mods todavía usan su carátula. Las bibliotecas conservan miniaturas representativas para neumáticos y remolques; el modelo original se carga dentro del editor.
+El visor usa la geometría y los mapas de color, normales y sombreado originales disponibles localmente. La iluminación, los terrenos y el movimiento son una escena propia: no ejecuta el motor de SnowRunner, no calcula agarre ni reproduce su física. Los selectores del visor son de previsualización; los parámetros editables se guardan únicamente con **Guardar**. No se simulan cambios visibles de motor. Se muestra el chasis con los accesorios predeterminados del XML, no los accesorios ni la pintura de una partida guardada. Los modelos compilados personalizados de mods todavía usan su carátula. Las bibliotecas conservan miniaturas representativas para neumáticos y remolques; el modelo original se carga dentro del editor.
+
+Las reglas de materiales y cabinas siguen la documentación oficial de Saber: [Material](https://expeditions-guides.saber.games/truck_modding/tags_and_attributes_of_trucks/combinexmesh/material/), [Truck meshes](https://expeditions-guides.saber.games/truck_modding/general_info/fbx_file_structure/truck_meshes/) y [Special meshes](https://expeditions-guides.saber.games/truck_modding/general_info/fbx_file_structure/special_meshes/). Para comprobar cada vehículo y remolque instalado en la aplicación, ejecutar `$env:SNOWRUNNER_ALL_MODELS='1'; node scripts/test-library-ui.mjs` después de generar el ejecutable.
 
 En la instalación comprobada se verificó la lectura de 184 modelos distintos del catálogo. Los archivos extraídos permanecen en la caché local `game-models`; no entran en GitHub ni en el instalador.
 

@@ -6,6 +6,7 @@ import type { GameMeshAsset } from '@modules/images/types'
 
 type Sub = { material: number; start: number; count: number }
 type Node = { id: number; parent: number; name: string; matrix: THREE.Matrix4; mesh?: THREE.Mesh; skinned: boolean }
+const modelTextures = new WeakMap<THREE.Object3D, THREE.Texture[]>()
 class Reader {
   offset = 0
   readonly view: DataView
@@ -73,7 +74,7 @@ export function parseCombineMesh(data: Uint8Array, trace?: (data: unknown) => vo
     if (flag >= 4 && flag <= 100) { r.skip(1); const n = r.i16(); r.skip(1); r.skip(n + 16); if (r.i16() > 100) r.skip(64) }
     if (flag > 100) r.skip(64)
     // Collision volumes and alternate LODs are not visible geometry.
-    if (/^cdt(?:_|\d)|_cdt$|_lod[1-9]|_collision/i.test(meshName) || /_lod[1-9]/i.test(name)) continue
+    if (/^cdt(?:_|\d)|_cdt$|_lod[1-9]|_collision|(?:^|_)hp_|_+\s*(?:windshield|cockpit)/i.test(meshName) || /_lod[1-9]/i.test(name)) continue
     const geometry = new THREE.BufferGeometry()
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3)); geometry.setIndex(new THREE.BufferAttribute(triangles, 1))
     if (definitions.includes(5)) geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2))
@@ -101,6 +102,7 @@ export function parseCombineMesh(data: Uint8Array, trace?: (data: unknown) => vo
   }
   model.userData.xml = xml
   model.userData.nodes = nodes.length
+  model.userData.frames = Object.fromEntries(nodes.map(n => [n.name, world(n).toArray()]))
   if (!model.children.length) throw new Error('Mesh has no visible geometry')
   return model
 }
@@ -113,8 +115,14 @@ export async function loadGameMesh(asset: GameMeshAsset) {
     const xml = new DOMParser().parseFromString(model.userData.xml, 'application/xml'), defs = new Map<string, Element>()
     xml.querySelectorAll('Material').forEach(element => defs.set(element.getAttribute('Name') ?? '', element))
     const loader = new DDSLoader(), textures = new Map<string, THREE.CompressedTexture>()
+    const colorRefs = new Set([...defs.values()].map(def => def.getAttribute('AlbedoMap')))
     await Promise.all(Object.entries(asset.textures).map(async ([ref, url]) => {
-      try { const texture = await loader.loadAsync(url); texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 4; textures.set(ref, texture) } catch { /* Unavailable texture: neutral material, never a fake model. */ }
+      try {
+        const texture = await loader.loadAsync(url)
+        if (!texture.image?.width || !texture.mipmaps.length) { texture.dispose(); return }
+        texture.colorSpace = colorRefs.has(ref) ? THREE.SRGBColorSpace : THREE.NoColorSpace
+        texture.anisotropy = 4; textures.set(ref, texture)
+      } catch { /* Unavailable texture: neutral material, never a fake model. */ }
     }))
     model.traverse(object => {
       if (!(object instanceof THREE.Mesh)) return
@@ -122,21 +130,50 @@ export async function loadGameMesh(asset: GameMeshAsset) {
         const def = defs.get(material.name), ref = def?.getAttribute('AlbedoMap')
         if (material instanceof THREE.MeshStandardMaterial) {
           material.map = ref ? textures.get(ref) ?? null : null
+          material.normalMap = textures.get(def?.getAttribute('NormalMap') ?? '') ?? null
+          const normalScale = finiteAttribute(def, 'NormalScale', 1)
+          material.normalScale.set(normalScale, -normalScale) // DirectX normal maps have an inverted green channel.
+          const shading = textures.get(def?.getAttribute('ShadingMap') ?? '') ?? null
+          material.metalnessMap = shading; material.roughnessMap = shading; material.aoMap = shading
+          material.metalness = shading ? finiteAttribute(def, 'MetalnessScale', 1) : 0
+          material.roughness = shading ? finiteAttribute(def, 'RoughnessScale', 1) : .8
+          material.aoMapIntensity = finiteAttribute(def, 'AmbientOcclusionIntensity', 1)
+          material.envMapIntensity = Math.min(3, finiteAttribute(def, 'ReflectivityMultiplier', 1))
+          const metalBias = finiteAttribute(def, 'MetalnessBias', 0), roughBias = finiteAttribute(def, 'RoughnessBias', 0)
+          // Saber packs metalness/R, roughness/G, AO/B; Three expects AO/R, roughness/G, metalness/B.
+          material.onBeforeCompile = shader => {
+            shader.uniforms.gameMetalBias = { value: metalBias }; shader.uniforms.gameRoughBias = { value: roughBias }
+            shader.fragmentShader = 'uniform float gameMetalBias;\nuniform float gameRoughBias;\n' + shader.fragmentShader
+            shader.fragmentShader = shader.fragmentShader
+              .replace('#include <metalnessmap_fragment>', THREE.ShaderChunk.metalnessmap_fragment.replace('texelMetalness.b', 'texelMetalness.r') + '\nmetalnessFactor = clamp(metalnessFactor + gameMetalBias, 0.0, 1.0);')
+              .replace('#include <roughnessmap_fragment>', THREE.ShaderChunk.roughnessmap_fragment + '\nroughnessFactor = clamp(roughnessFactor + gameRoughBias, 0.04, 1.0);')
+              .replace('#include <aomap_fragment>', THREE.ShaderChunk.aomap_fragment.replace('vAoMapUv ).r', 'vAoMapUv ).b'))
+          }
+          material.customProgramCacheKey = () => 'saber-pbr-v2'
           material.color.set(material.map ? 0xffffff : /glass/i.test(material.name) ? 0x697f86 : 0xc8c9c4)
-          if (def?.getAttribute('Blending') === 'alpha') { material.transparent = true; material.opacity = .6; material.depthWrite = false }
+          if (def?.getAttribute('Blending') === 'alpha') { material.transparent = true; material.opacity = 1; material.depthWrite = false; material.side = THREE.FrontSide }
           if (def?.getAttribute('AlphaKill') === 'true') material.alphaTest = .4
           material.needsUpdate = true
         }
       }
     })
-    model.userData.textures = [...textures.values()]
+    // Object3D.clone serializes userData: keep GPU resources out of it.
+    modelTextures.set(model, [...textures.values()])
+    model.userData.materials = { expected: Object.keys(asset.textures).length, loaded: textures.size }
     return model
   } catch (error) { disposeGameModel(model); throw error }
 }
 
+function finiteAttribute(def: Element | undefined, name: string, fallback: number) {
+  const raw = def?.getAttribute(name), value = raw === null || raw === undefined ? fallback : Number(raw)
+  return Number.isFinite(value) ? value : fallback
+}
+
 export function disposeGameModel(model: THREE.Object3D) {
-  const textures = new Set<THREE.Texture>(model.userData.textures ?? [])
+  const textures = new Set<THREE.Texture>()
   model.traverse(object => {
+    for (const texture of modelTextures.get(object) ?? []) textures.add(texture)
+    modelTextures.delete(object)
     if (!(object instanceof THREE.Mesh)) return
     object.geometry.dispose()
     for (const m of Array.isArray(object.material) ? object.material : [object.material]) {

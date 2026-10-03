@@ -7,7 +7,7 @@
         <select v-model="terrain" :aria-label="texts.terrain">
           <option v-for="value in ['auto', 'forest', 'mud', 'snow', 'rock'] as const" :key="value" :value="value">{{ texts[value] }}</option>
         </select>
-        <button @click="stage?.resetCamera()">↺</button>
+        <button :aria-label="texts.reset" :title="texts.reset" @click="stage?.resetCamera()">↺</button>
       </div>
     </div>
     <div ref="host" class="drive-preview__scene" :aria-label="name">
@@ -54,6 +54,7 @@ const texts = loadLocalization(new Localization({
   suspension: new LocalizationStrings().es('Suspensión · vista previa').en('Suspension · preview'),
   motion: new LocalizationStrings().es('Pausar o reanudar movimiento').en('Pause or resume movement'),
   terrain: new LocalizationStrings().es('Terreno').en('Terrain'),
+  reset: new LocalizationStrings().es('Encuadrar vehículo completo').en('Fit entire vehicle'),
   auto: new LocalizationStrings().es('Ruta automática').en('Automatic route'),
   forest: new LocalizationStrings().es('Bosque').en('Forest'),
   mud: new LocalizationStrings().es('Barro').en('Mud'),
@@ -100,7 +101,8 @@ onMounted(async () => {
     if (selectedSuspensionIndex >= 0) suspensionId.value = selectedSuspensionIndex
     await changeTires()
     if (disposed) return
-    updateAppearance(); state.value = 'ready'
+    updateAppearance(); stage.resetCamera(); state.value = 'ready'
+    host.value!.dataset.materials = JSON.stringify(model.userData.materials)
     poll = setInterval(updateAppearance, 300)
   } catch (error) { if (!disposed) { state.value = 'unavailable'; console.warn('Vista del vehículo:', error) } }
 })
@@ -126,6 +128,19 @@ async function loadDefaultAddons(model: THREE.Group) {
           if (!asset) continue
           const addon = await loadGameMesh(asset)
           if (disposed) { disposeGameModel(addon); return }
+          const frame = xml?.select('TruckAddon > PhysicsModel > Body')?.getAttr('ModelFrame')?.str
+          const installType = xml?.select('TruckAddon > GameData > InstallSocket')?.getAttr('Type')?.str
+          const attachment = socket.selectAll('Socket').find(s => s.getAttr('Names')?.str.split(',').map(n => n.trim()).includes(installType ?? ''))
+          const parent = attachment?.getAttr('ParentFrame')?.str ?? frame
+          const vehicleFrame = parent ? model.userData.frames?.[parent] : undefined
+          const addonFrame = frame ? addon.userData.frames?.[frame] : undefined
+          // Align the accessory's authored rest frame, not an arbitrary bounding-box center.
+          if (vehicleFrame && addonFrame) {
+            const offset = attachment?.getAttr('Offset')?.str.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [0, 0, 0]
+            addon.applyMatrix4(new THREE.Matrix4().fromArray(vehicleFrame)
+              .multiply(new THREE.Matrix4().makeTranslation(offset[0] ?? 0, offset[1] ?? 0, offset[2] ?? 0))
+              .multiply(new THREE.Matrix4().fromArray(addonFrame).invert()))
+          }
           model.add(addon); found = true; break
         }
         if (found) break
@@ -140,7 +155,9 @@ async function loadOptions() {
   const candidates = data.CompatibleWheels
   const wheels = await data.Wheels?.defaultWheel(info)
   const add = (pack: Wheels | undefined, scale: () => number) => {
-    const rim = pack?.TruckRims?.Rims[0]?.getAttrWT('Mesh')?.str
+    const defaultRim = data.Wheels?.getAttrWT('DefaultRim')?.str
+    const rims = pack?.TruckRims?.Rims ?? []
+    const rim = (rims.find(rim => rim.getAttrWT('Name')?.str === defaultRim) ?? rims[0])?.getAttrWT('Mesh')?.str
     for (const tire of pack?.TruckTires?.Tires ?? []) {
       const mesh = tire.getAttrWT('Mesh')?.str
       if (!mesh) continue
@@ -188,7 +205,7 @@ async function changeTires() {
       const model = tire.clone(true)
       // Composite wheels contain front and double rear versions in one file.
       model.traverse(object => {
-        if (/rear/i.test(object.name)) object.visible = wheel.Location === 'rear'
+        if (/(?:rear|back)/i.test(object.name)) object.visible = wheel.Location === 'rear'
         if (/front/i.test(object.name)) object.visible = wheel.Location !== 'rear'
       })
       return { model, position: xyz, scale: choice.scale(), right }
@@ -207,17 +224,17 @@ function toggleMotion() { moving.value = !moving.value; if (stage) stage.moving 
 onBeforeUnmount(() => { disposed = true; request++; clearInterval(poll); stage?.dispose(); if (body) disposeGameModel(body); wheelModels.forEach(disposeGameModel) })
 </script>
 <style scoped>
-.drive-preview { display: flex; flex-direction: column; flex: 1 1 0; min-height: 260px; border: 1px solid #d5e0e6; border-radius: 13px; overflow: hidden; width: 100%; background: #13222c; }
+.drive-preview { display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; border: 1px solid #d5e0e6; border-radius: 13px; overflow: hidden; width: 100%; background: #13222c; }
 .drive-preview__toolbar { padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; color: #e2e9ec; font-size: 12px; }
 .drive-preview__toolbar>div { display: flex; gap: 6px; }
 button, select { font: inherit; border: 1px solid #52636d; background: #213541; color: #eff4f6; border-radius: 6px; padding: 4px 8px; cursor: pointer; }
 select { min-width: 0; max-width: 100%; }
-.drive-preview__scene { flex: 1 1 auto; min-height: 180px; height: clamp(180px, 42vh, 560px); position: relative; overflow: hidden; }
+.drive-preview__scene { flex: 1 1 0; min-height: 100px; position: relative; overflow: hidden; }
 .drive-preview__scene :deep(canvas) { display: block; width: 100%; height: 100%; touch-action: none; }
 .drive-preview__fallback { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 14px; padding: 20px; background: #d5e0e8e8; color: #314859; font-size: 12px; }
 .drive-preview__fallback img { max-height: 100%; max-width: 45%; object-fit: contain; }
 .drive-preview__selectors { display: grid; grid-template-columns: 1fr; padding: 9px 12px 0; color: #c8d6dc; font-size: 11px; }
 label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 p { margin: 0; padding: 8px 12px; color: #99acb7; font-size: 10px; }
-@media (max-width: 700px) { .drive-preview__toolbar { flex-wrap: wrap; } .drive-preview__scene { height: 240px; } }
+@container (max-width: 380px) { .drive-preview__toolbar { flex-wrap: wrap; padding: 8px; } .drive-preview__toolbar>div { flex-wrap: wrap; } p { font-size: 9px; padding: 6px; } .drive-preview__selectors { padding: 8px; } }
 </style>

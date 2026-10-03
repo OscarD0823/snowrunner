@@ -35,7 +35,9 @@ defineEmits<ReadyEmits & { previewContext: [context: VehiclePreviewContext] }>()
 
 <style lang='scss' scoped>
 .table {
-	padding: 20px;
+	padding: 12px;
+	container-type: inline-size;
+	container-name: vehicle-settings;
 	min-height: 0;
 	flex: 1 1 0;
 	overflow-y: auto;

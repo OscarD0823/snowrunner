@@ -49,7 +49,7 @@ export class Images implements IMainImages {
     const root = dirname(initialPath), shared = join(root, 'shared.pak'), editor = join(root, 'editor.pak')
     const info = await stat(shared)
     const textureInfo = await stat(editor)
-    const signature = createHash('sha256').update(`${info.size}:${info.mtimeMs}:${textureInfo.size}:${textureInfo.mtimeMs}`).digest('hex').slice(0, 16)
+    const signature = createHash('sha256').update(`pbr-v2:${info.size}:${info.mtimeMs}:${textureInfo.size}:${textureInfo.mtimeMs}`).digest('hex').slice(0, 16)
     const folder = join(this.paths.workspace, 'game-models', signature)
     const flat = reference.replaceAll('/', '_'), meshPath = join(folder, flat + '.bin'), indexPath = meshPath + '.json'
     try {
@@ -64,8 +64,8 @@ export class Images implements IMainImages {
     const xml = mesh.toString('utf8', 4, length + 2)
     const textures: Record<string, string> = {}
     await mkdir(folder, { recursive: true })
-    // The initial viewer uses original albedo maps; no foreign shaders or game files ship in the app.
-    const refs = [...new Set([...xml.matchAll(/AlbedoMap="([^"]+)"/g)].map(m => m[1]))].slice(0, 32)
+    // Original PBR maps are read locally; no game assets ship in the app.
+    const refs = [...new Set([...xml.matchAll(/(?:Albedo|Normal|Shading)Map="([^"]+)"/g)].map(m => m[1]))].slice(0, 128)
     for (const ref of refs) {
       if (!/^[a-z0-9_/. -]{1,200}$/i.test(ref) || ref.includes('..')) continue
       const name = ref.replaceAll('/', '_').replace(/\.tga$/i, '.dds'), output = join(folder, name)

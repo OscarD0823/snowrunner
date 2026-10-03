@@ -1,53 +1,24 @@
 <template>
-  <div class="container" :data-editor-view="view">
+  <div class="container" data-editor-view="split">
     <EditorHeader
       ref="header"
       :xml="xml"
       :file="file"
       :has-error="hasError"
     />
-    <VehiclePreview v-if="xml" ref="preview" :xml="xml" :file="file" :expanded="view === 'preview'" :preview-context="previewContext">
-      <template #actions>
-        <nav class="editor-view-tabs" role="tablist" :aria-label="viewTexts.navigation" :title="viewTexts.hint">
-          <button
-            id="editor-settings-tab"
-            role="tab"
-            :aria-selected="view === 'settings'"
-            aria-controls="editor-settings-panel"
-            :tabindex="view === 'settings' ? 0 : -1"
-            @click="view = 'settings'"
-            @keydown.right.prevent="focusView('preview')"
-            @keydown.left.prevent="focusView('preview')"
-            @keydown.home.prevent="focusView('settings')"
-            @keydown.end.prevent="focusView('preview')"
-          >{{ viewTexts.settings }}</button>
-          <button
-            id="editor-preview-tab"
-            role="tab"
-            :aria-selected="view === 'preview'"
-            aria-controls="editor-preview-panel"
-            :tabindex="view === 'preview' ? 0 : -1"
-            @click="view = 'preview'"
-            @keydown.right.prevent="focusView('settings')"
-            @keydown.left.prevent="focusView('settings')"
-            @keydown.home.prevent="focusView('settings')"
-            @keydown.end.prevent="focusView('preview')"
-          >{{ viewTexts.preview }}</button>
-        </nav>
-      </template>
-    </VehiclePreview>
-    <Table
-      v-if="xml"
-      v-show="view === 'settings'"
-      id="editor-settings-panel"
-      role="tabpanel"
-      aria-labelledby="editor-settings-tab"
-      tabindex="0"
-      :xml="xml"
-      :file="file"
-      @ready="$emit('ready')"
-      @preview-context="previewContext = $event"
-    />
+    <div v-if="xml" class="editor-workspace">
+      <VehiclePreview ref="preview" :xml="xml" :file="file" :preview-context="previewContext" />
+      <Table
+        id="editor-settings-panel"
+        role="region"
+        :aria-label="viewTexts.settings"
+        tabindex="0"
+        :xml="xml"
+        :file="file"
+        @ready="$emit('ready')"
+        @preview-context="previewContext = $event"
+      />
+    </div>
     <Spin
       v-else-if="!hasError"
       center
@@ -112,22 +83,12 @@ const { route } = usePageStore()
 const xml = shallowRef<TruckXML | null>(null)
 const header = ref<InstanceType<typeof EditorHeader> | null>(null)
 const hasError = ref<boolean>(false)
-const view = ref<'settings' | 'preview'>('settings')
 const previewContext = ref<VehiclePreviewContext>()
 const viewTexts = loadLocalization(new Localization({
-  settings: new LocalizationStrings().es('Ajustes').en('Settings'),
-  preview: new LocalizationStrings().es('Visor del vehículo').en('Vehicle viewer'),
-  navigation: new LocalizationStrings().es('Vistas del editor').en('Editor views'),
-  hint: new LocalizationStrings().es('Los cambios se mantienen al cambiar de pestaña.').en('Changes are kept when switching tabs.')
+  settings: new LocalizationStrings().es('Ajustes del vehículo').en('Vehicle settings')
 }))
 const preview = ref<InstanceType<typeof VehiclePreview>>()
 provide(VEHICLE_APPEARANCE, { tire: mesh => preview.value?.tire(mesh), suspension: name => preview.value?.suspension(name) })
-
-async function focusView(value: 'settings' | 'preview') {
-  view.value = value
-  await nextTick()
-  document.getElementById(value === 'settings' ? 'editor-settings-tab' : 'editor-preview-tab')?.focus()
-}
 
 const file = (props.file ?? prevFile.value)!
 
@@ -221,27 +182,22 @@ div.ant-collapse {
   > header { flex: 0 0 auto; }
 }
 
-.editor-view-tabs {
-  display: flex;
-  align-items: center;
-  flex: 0 0 auto;
-  gap: 6px;
-  padding: 0;
+.editor-workspace {
+  display: grid;
+  grid-template-columns: minmax(230px, .85fr) minmax(330px, 1.15fr);
+  flex: 1 1 0;
   min-width: 0;
-
-  button {
-    padding: 9px 12px;
-    border: 1px solid #dbe4ed;
-    border-radius: 9px;
-    background: #fff;
-    color: #526176;
-    font: inherit;
-    font-size: 13px;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  button[aria-selected='true'] { background: #fff2e5; border-color: #fb923c; color: #9a3412; font-weight: 650; }
-  button:focus-visible { outline: 2px solid #ea580c; outline-offset: 2px; }
+  min-height: 0;
+  gap: 12px;
+  padding: 12px 16px 16px;
+  background: #edf2f6;
+  > :deep(.table) { min-width: 0; border: 1px solid #dbe4ed; border-radius: 12px; background: white; }
+}
+@media (max-width: 760px) {
+  .editor-workspace { grid-template-columns: minmax(180px, .65fr) minmax(0, 1fr); padding: 8px; gap: 8px; }
+}
+@media (max-width: 480px) {
+  .editor-workspace { grid-template-columns: minmax(0, .7fr) minmax(0, 1fr); gap: 4px; padding: 4px; }
 }
 
 .spin-container {

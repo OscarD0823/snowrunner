@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process'
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const repo = dirname(dirname(fileURLToPath(import.meta.url)))
 const exe = process.env.SNOWRUNNER_APP_EXE || join(repo, 'out', 'SnowRunner Studio-win32-x64', 'SnowRunner Studio.exe')
@@ -121,7 +121,9 @@ function call(method, params = {}) {
 }
 
 async function evaluate(expression) {
-	return (await call('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true })).result.value
+  const response = await call('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true })
+  if (response.exceptionDetails) throw new Error(response.exceptionDetails.exception?.description ?? response.exceptionDetails.text)
+  return response.result.value
 }
 
 await call('Page.enable')
@@ -207,9 +209,9 @@ async function back() {
 }
 const fords = []
 const editorLayouts = []
+const allModelChecks = []
 async function editorView(view) {
-  await evaluate(`document.getElementById('editor-${view}-tab').click()`)
-  await waitFor(`document.querySelector('.container[data-editor-view]')?.dataset.editorView === ${JSON.stringify(view)}`, `pestaña ${view}`)
+  if (!await evaluate(`document.querySelector('.container[data-editor-view]')?.dataset.editorView === 'split' && document.querySelector('.drive-preview')?.getBoundingClientRect().height > 0 && document.getElementById('editor-settings-panel')?.getBoundingClientRect().height > 0`)) throw new Error('El visor y los ajustes no permanecen visibles juntos')
 }
 async function truckGroup(icon) {
   await evaluate(`(() => {
@@ -234,7 +236,8 @@ for (const model of ['CLT9000', 'F 750']) {
 		card.querySelector('.card').click()
 	})()`)
 	await waitFor(`Boolean(document.querySelector('.vehicle-preview strong')?.textContent.replace(/[- ]/g, '').toLowerCase().includes(${JSON.stringify(model.replace(/[- ]/g, '').toLowerCase())}) && document.querySelector('.vehicle-preview img')?.complete && document.querySelector('.vehicle-preview img')?.naturalWidth > 0 && document.querySelector('.vehicle-preview img')?.src.includes(${JSON.stringify(model === 'CLT9000' ? 'shopimgfordclt9000' : 'shopimgford750')}))`, `foto del Ford ${model} en el editor`)
-  if (!await evaluate(`document.getElementById('editor-settings-tab').getAttribute('aria-selected') === 'true' && !document.querySelector('.drive-preview')`)) throw new Error('El editor no inicia en Ajustes sin cargar el visor')
+  await editorView('settings')
+  await waitFor(`document.querySelector('.drive-preview')?.dataset.modelState === 'ready'`, `visor lateral del Ford ${model}`)
   if (model === 'CLT9000') {
     await truckGroup('steering-wheel')
     await waitFor(`Boolean(document.querySelector('#editor-settings-panel input'))`, 'campos de dirección')
@@ -242,8 +245,8 @@ for (const model of ['CLT9000', 'F 750']) {
     for (const width of [600, 960, 1366]) {
       await call('Emulation.setDeviceMetricsOverride', {width, height:620, deviceScaleFactor:1, mobile:false})
       await new Promise(resolve => setTimeout(resolve, 150))
-      const layout = await evaluate(`(() => { const panel = document.getElementById('editor-settings-panel'); const r = panel.getBoundingClientRect(); return {width:innerWidth, scroll:document.documentElement.scrollWidth, settingsHeight:r.height, panelWidth:panel.clientWidth, panelScroll:panel.scrollWidth, outsideInputs:[...panel.querySelectorAll('input')].filter(input=>{const box=input.getBoundingClientRect();return box.height && (box.left<r.left || box.right>r.right)}).length, visibleInputs:[...panel.querySelectorAll('input')].filter(input=>{const box=input.getBoundingClientRect();return box.height && box.top>=0 && box.bottom<=innerHeight}).length} })()`)
-      if (layout.scroll > layout.width || layout.panelScroll > layout.panelWidth + 1 || layout.outsideInputs || layout.settingsHeight < 620 * .60 || !layout.visibleInputs) throw new Error('Ajustes demasiado reducidos o con desplazamiento lateral: ' + JSON.stringify(layout))
+      const layout = await evaluate(`(() => { const panel = document.getElementById('editor-settings-panel'); const r = panel.getBoundingClientRect(), viewer = document.querySelector('.vehicle-preview').getBoundingClientRect(); return {width:innerWidth, scroll:document.documentElement.scrollWidth, settingsHeight:r.height, panelWidth:panel.clientWidth, panelScroll:panel.scrollWidth, viewerWidth:viewer.width, beside:viewer.right <= r.left, framed:document.querySelector('.drive-preview__scene').dataset.framed, outsideInputs:[...panel.querySelectorAll('input')].filter(input=>{const box=input.getBoundingClientRect();return box.height && (box.left<r.left || box.right>r.right)}).length, visibleInputs:[...panel.querySelectorAll('input')].filter(input=>{const box=input.getBoundingClientRect();return box.height && box.top>=0 && box.bottom<=innerHeight}).length} })()`)
+      if (layout.scroll > layout.width || layout.panelScroll > layout.panelWidth + 1 || layout.outsideInputs || layout.settingsHeight < 620 * .60 || !layout.visibleInputs || !layout.beside || layout.framed !== 'true') throw new Error('Visor lateral o ajustes mal encuadrados: ' + JSON.stringify(layout))
       editorLayouts.push(layout)
       const screenshot = await call('Page.captureScreenshot', {format:'png', captureBeyondViewport:false})
       await writeFile(join(outputDir, `settings-${width}.png`), Buffer.from(screenshot.data, 'base64'))
@@ -259,12 +262,7 @@ for (const model of ['CLT9000', 'F 750']) {
     })()`)
     await waitFor(`window.__layoutField.value !== ${JSON.stringify(edit)}`, 'cambio en memoria sin guardar')
   }
-  if (model === 'CLT9000') {
-    await evaluate(`document.getElementById('editor-settings-tab').focus()`)
-    await call('Input.dispatchKeyEvent', {type:'keyDown', key:'ArrowRight', code:'ArrowRight', windowsVirtualKeyCode:39})
-    await call('Input.dispatchKeyEvent', {type:'keyUp', key:'ArrowRight', code:'ArrowRight', windowsVirtualKeyCode:39})
-    await waitFor(`document.activeElement?.id === 'editor-preview-tab' && document.querySelector('.container[data-editor-view]')?.dataset.editorView === 'preview'`, 'navegación de pestañas con teclado')
-  } else await editorView('preview')
+  await editorView('preview')
   await waitFor(`document.querySelector('.drive-preview')?.dataset.modelState === 'ready'`, `modelo 3D del Ford ${model}`)
   if (await evaluate(`document.querySelectorAll('.drive-preview__selectors select').length`)) throw new Error('Se muestran componentes fuera de su categoría')
   await evaluate(`document.querySelector('.drive-preview').scrollIntoView({block:'center'})`)
@@ -320,6 +318,31 @@ await evaluate(`document.querySelector('.card-container .card').click()`)
 await waitFor(`document.querySelectorAll('.parameter').length > 0 && Boolean(document.querySelector('.vehicle-preview img')?.naturalWidth)`, 'editor de remolques')
 trailers.editorParameters = await evaluate(`document.querySelectorAll('.parameter').length`)
 await back()
+
+if (process.env.SNOWRUNNER_ALL_MODELS === '1') {
+  await mkdir(join(outputDir, 'all-models'), { recursive: true })
+  for (const category of ['Camiones', 'Remolques']) {
+    await selectCategory(category)
+    await waitFor(`document.querySelectorAll('.card-container').length === ${category === 'Camiones' ? truckState.cards : trailers.cards}`, category)
+    const names = await evaluate(`[...document.querySelectorAll('.card-container img')].map(img=>img.alt)`)
+    for (const name of names) {
+      await evaluate(`(() => {const image=[...document.querySelectorAll('.card-container img')].find(img=>img.alt===${JSON.stringify(name)});image.closest('.card-container').querySelector('.card').click()})()`)
+      for (let attempt=0; attempt<480; attempt++) {
+        if (await evaluate(`['ready','unavailable'].includes(document.querySelector('.drive-preview')?.dataset.modelState)`)) break
+        await new Promise(resolve=>setTimeout(resolve,125))
+      }
+      const result = await evaluate(`(() => {const viewer=document.querySelector('.drive-preview'),scene=viewer?.querySelector('.drive-preview__scene'),image=document.querySelector('.vehicle-preview img'); return {state:viewer?.dataset.modelState,framed:scene?.dataset.framed,wheels:Number(scene?.dataset.wheels ?? 0),materials:JSON.parse(scene?.dataset.materials ?? '{}'),imageLoaded:Boolean(image?.naturalWidth),overflow:document.documentElement.scrollWidth>innerWidth}})()`)
+      allModelChecks.push({ category, name, ...result })
+      if (result.state !== 'ready' || result.framed !== 'true' || result.overflow || !result.imageLoaded) throw new Error('Falló modelo: '+JSON.stringify(allModelChecks.at(-1))+'\n'+diagnostics.slice(-10).join('\n'))
+      const bounds = await evaluate(`document.querySelector('.drive-preview__scene').getBoundingClientRect().toJSON()`)
+      const shot = await call('Page.captureScreenshot', {format:'png',captureBeyondViewport:false,clip:{x:bounds.x,y:bounds.y,width:bounds.width,height:bounds.height,scale:1}})
+      await writeFile(join(outputDir,'all-models',`${String(allModelChecks.length).padStart(3,'0')}.png`),Buffer.from(shot.data,'base64'))
+      if (allModelChecks.length % 5 === 0) console.log(`Visores reales comprobados: ${allModelChecks.length} · ${name}`)
+      await back()
+    }
+  }
+  if (allModelChecks.length !== truckState.cards + trailers.cards) throw new Error('Cobertura incompleta de modelos')
+}
 
 for (const label of ['Motores', 'Neumáticos', 'Cabrestantes']) {
 	await evaluate(`(() => {
@@ -377,9 +400,6 @@ await new Promise(resolve => setTimeout(resolve, 500))
 
 const shot = await call('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
 await writeFile(join(outputDir, 'components-960x620.png'), Buffer.from(shot.data, 'base64'))
-socket.close()
-child.kill()
-
 if (truckState.title !== 'SnowRunner Studio' || truckState.cards < 100) {
 	throw new Error(`La biblioteca de vehículos no se cargó: ${JSON.stringify(truckState)}`)
 }
@@ -401,7 +421,18 @@ for (const [label, state] of Object.entries(categories)) {
 	if (!state.editor.help || state.editor.variants.some(name => /UI_|undefined/.test(name))) throw new Error(`Falta traducción/ayuda en ${label}: ${JSON.stringify(state.editor)}`)
 }
 if (!categories['Neumáticos'].rendered || !categories['Neumáticos'].editor.preview) throw new Error('Falta el render de neumáticos')
-await writeFile(join(outputDir, 'results.json'), JSON.stringify({ truckState, fords, editorLayouts, trailers, categories, diagnostics, networkFailures }, null, 2))
+const renderErrors = diagnostics.filter(text => /shader error|error|failed|uncaught|unable to serialize/i.test(text))
+if (renderErrors.length || networkFailures.length) throw new Error('Errores de render o recursos: '+JSON.stringify({renderErrors,networkFailures}))
+await writeFile(join(outputDir, 'results.json'), JSON.stringify({ truckState, fords, editorLayouts, trailers, categories, allModelChecks, diagnostics, networkFailures }, null, 2))
+if (allModelChecks.length) {
+  for (let start=0; start<allModelChecks.length; start+=24) {
+    const items = allModelChecks.slice(start,start+24).map((item,i)=>({name:item.name,url:pathToFileURL(join(outputDir,'all-models',`${String(start+i+1).padStart(3,'0')}.png`)).href}))
+    await call('Emulation.setDeviceMetricsOverride', {width:1600,height:1800,deviceScaleFactor:1,mobile:false})
+    await evaluate(`(async()=>{document.getElementById('qa-contact')?.remove(); const wall=document.createElement('div');wall.id='qa-contact';wall.style='position:fixed;inset:0;z-index:999999;background:#fff;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:290px;gap:8px;padding:12px;color:#162439;font:16px sans-serif;';document.body.append(wall);for(const item of ${JSON.stringify(items)}){const card=document.createElement('div'),label=document.createElement('div'),img=new Image();label.textContent=item.name;img.style='width:100%;height:250px;object-fit:contain';img.src=item.url;card.append(img,label);wall.append(card);await img.decode()}})()`)
+    const sheet=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false})
+    await writeFile(join(outputDir,`contact-${start/24+1}.png`),Buffer.from(sheet.data,'base64'))
+  }
+}
 console.log(JSON.stringify({ trucks: truckState.cards, fords, editorLayouts, trailers, components: Object.fromEntries(Object.entries(categories).map(([label, state]) => [label, { cards: state.cards, rendered: state.rendered, editor: state.editor.title, help: state.editor.help }])), errors: diagnostics.filter(text => /error|failed|uncaught/i.test(text)), failedRequests: networkFailures.length }, null, 2))
 } finally {
 	socket?.close()
