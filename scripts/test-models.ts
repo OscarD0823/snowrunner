@@ -8,6 +8,8 @@ import { fitVehicleCamera, sceneryOccludesVehicle, vehicleScreenRegion } from '.
 import { addonPlacement } from '../src/renderer/utilities/addon-placement'
 import { wheelPlacement } from '../src/renderer/utilities/wheel-placement'
 import { readGamePaint, parseGamePaints } from '../src/modules/images/game-paint'
+import { selectWheelVariant } from '../src/renderer/utilities/wheel-variant'
+import { visibleVehicleBounds } from '../src/renderer/utilities/vehicle-framing'
 
 const game = process.env.SNOWRUNNER_GAME_ROOT ?? 'E:/SteamLibrary/steamapps/common/SnowRunner'
 const root = join(game, '.snowrunner-studio/mainTemp/[media]')
@@ -72,10 +74,16 @@ for (const ref of references) {
     if (models % 25 === 0) console.log(`Modelos verificados: ${models}/${references.size}`)
   } catch (error) { failures.push({ ref, error: String(error) }) }
 }
-for (const ref of ['wheels/tire_medium_highway_double_1', 'wheels/tire_medium_allterrain_double_1', 'wheels/rim_medium_highway_allterrain_double_1']) {
+for (const ref of ['wheels/tire_medium_highway_double_1', 'wheels/tire_medium_allterrain_double_1', 'wheels/rim_medium_highway_allterrain_double_1', 'wheels/tire_medium_highway_double_front_1', 'wheels/rim_medium_highway_allterrain_double_front_1']) {
   const bytes = await readGameEntry(join(game, 'preload/paks/client/shared.pak'), '[meshes]/' + ref.replaceAll('/', '_'))
   assert.ok(bytes)
-  const model = parseCombineMesh(bytes); assert.ok(model.children.length); disposeGameModel(model)
+  const model = parseCombineMesh(bytes); assert.ok(model.children.length)
+  for (const rear of [false,true]) {
+    selectWheelVariant(model,rear)
+    const size = visibleVehicleBounds(model).getSize(new THREE.Vector3())
+    assert.ok(size.x>.5 && size.y>.5, 'A wheel variant has no visible tire/rim: '+ref)
+  }
+  disposeGameModel(model)
   assert.throws(() => parseCombineMesh(bytes.subarray(0, 100)))
 }
 console.log(JSON.stringify({ references: references.size, models, parts, failures }, null, 2))

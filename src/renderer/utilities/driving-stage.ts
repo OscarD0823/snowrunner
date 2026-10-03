@@ -111,16 +111,19 @@ export class DrivingStage {
   }
   setWheels(units: Array<{ model: THREE.Object3D; position: [number, number, number]; scale: number; right: boolean; radius?: number; orientation?: THREE.Quaternion }>) {
     this.wheels.clear(); this.wheelUnits = []
+    let visibleWheels = true
     for (const unit of units) {
       const group = new THREE.Group()
       unit.model.scale.multiplyScalar(unit.scale)
       if (unit.right) unit.model.rotation.y = Math.PI
+      visibleWheels &&= !visibleVehicleBounds(unit.model).isEmpty()
       if (unit.orientation) group.quaternion.copy(unit.orientation)
       group.add(unit.model); group.position.fromArray(unit.position); this.wheels.add(group)
       this.wheelUnits.push({ group, base: group.position.clone(), orientation: group.quaternion.clone() })
       this.radius = Math.max(.15, unit.radius ?? unit.scale)
     }
     this.host.dataset.wheels = String(units.length)
+    this.host.dataset.wheelGeometry = String(visibleWheels)
     this.setAppearance(this.lift, this.wheelScale, true)
   }
   setAppearance(lift: number, scale = 1, force = false) {

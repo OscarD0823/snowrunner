@@ -44,6 +44,7 @@ import { DrivingStage, type Terrain } from '@renderer/utilities/driving-stage'
 import { disposeGameModel, loadGameMesh } from '@renderer/utilities/combine-mesh'
 import { addonPlacement } from '@renderer/utilities/addon-placement'
 import { wheelPlacement } from '@renderer/utilities/wheel-placement'
+import { selectWheelVariant } from '@renderer/utilities/wheel-variant'
 import type { VehiclePreviewContext } from '@renderer/utilities/vehicle-appearance'
 
 const texts = loadLocalization(new Localization({
@@ -266,10 +267,7 @@ async function changeTires() {
       const frame = wheel.getAttrWT('PosInLocalFrame')?.str === 'true' && parent ? body?.userData.frames?.[parent] : undefined
       const model = tire.clone(true)
       // Composite wheels contain front and double rear versions in one file.
-      model.traverse(object => {
-        if (/(?:rear|back)/i.test(object.name)) object.visible = wheel.Location === 'rear'
-        if (/front/i.test(object.name)) object.visible = wheel.Location !== 'rear'
-      })
+      selectWheelVariant(model,wheel.Location === 'rear')
       return { model, ...wheelPlacement(xyz,right,frame), scale: choice.scale(), right }
     })
     stage.setWheels(units)
