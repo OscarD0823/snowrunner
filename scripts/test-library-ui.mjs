@@ -331,9 +331,10 @@ if (process.env.SNOWRUNNER_ALL_MODELS === '1') {
         if (await evaluate(`['ready','unavailable'].includes(document.querySelector('.drive-preview')?.dataset.modelState)`)) break
         await new Promise(resolve=>setTimeout(resolve,125))
       }
-      const result = await evaluate(`(() => {const viewer=document.querySelector('.drive-preview'),scene=viewer?.querySelector('.drive-preview__scene'),image=document.querySelector('.vehicle-preview img'); return {state:viewer?.dataset.modelState,framed:scene?.dataset.framed,wheels:Number(scene?.dataset.wheels ?? 0),materials:JSON.parse(scene?.dataset.materials ?? '{}'),imageLoaded:Boolean(image?.naturalWidth),overflow:document.documentElement.scrollWidth>innerWidth}})()`)
+      const result = await evaluate(`(() => {const viewer=document.querySelector('.drive-preview'),scene=viewer?.querySelector('.drive-preview__scene'),image=document.querySelector('.vehicle-preview img'); return {state:viewer?.dataset.modelState,framed:scene?.dataset.framed,wheels:Number(scene?.dataset.wheels ?? 0),expectedWheels:Number(scene?.dataset.expectedWheels ?? 0),materials:JSON.parse(scene?.dataset.materials ?? '{}'),addons:JSON.parse(scene?.dataset.addons ?? '{}'),imageLoaded:Boolean(image?.naturalWidth),overflow:document.documentElement.scrollWidth>innerWidth}})()`)
       allModelChecks.push({ category, name, ...result })
-      if (result.state !== 'ready' || result.framed !== 'true' || result.overflow || !result.imageLoaded) throw new Error('Falló modelo: '+JSON.stringify(allModelChecks.at(-1))+'\n'+diagnostics.slice(-10).join('\n'))
+      if (result.state !== 'ready' || result.framed !== 'true' || result.overflow || !result.imageLoaded || result.wheels !== result.expectedWheels || result.materials.loaded !== result.materials.expected) throw new Error('Falló modelo: '+JSON.stringify(allModelChecks.at(-1))+'\n'+diagnostics.slice(-10).join('\n'))
+      if (result.addons.unavailable?.length) throw new Error('Faltan accesorios originales: '+JSON.stringify(allModelChecks.at(-1)))
       const bounds = await evaluate(`document.querySelector('.drive-preview__scene').getBoundingClientRect().toJSON()`)
       const shot = await call('Page.captureScreenshot', {format:'png',captureBeyondViewport:false,clip:{x:bounds.x,y:bounds.y,width:bounds.width,height:bounds.height,scale:1}})
       await writeFile(join(outputDir,'all-models',`${String(allModelChecks.length).padStart(3,'0')}.png`),Buffer.from(shot.data,'base64'))

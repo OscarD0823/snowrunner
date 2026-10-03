@@ -20,7 +20,7 @@
 		"test:images": "esbuild scripts/test-images.ts --bundle --platform=node --format=cjs --external:electron --outfile=.vite/test-images.cjs && electron .vite/test-images.cjs",
 		"test:pct": "esbuild scripts/test-pct-images.ts --bundle --platform=node --format=cjs --target=es2022 --external:electron --outfile=.vite/test-pct-images.cjs && electron .vite/test-pct-images.cjs",
 		"test:ui": "node scripts/test-ui.mjs && node scripts/test-library-ui.mjs",
-		"test:models": "esbuild scripts/test-models.ts --bundle --platform=node --format=esm --outfile=.vite/test-models.mjs && node .vite/test-models.mjs",
+		"test:models": "esbuild scripts/test-models.ts --bundle --platform=node --format=esm --external:cheerio --outfile=.vite/test-models.mjs && node .vite/test-models.mjs",
 		"lint": "eslint src/**",
 		"lint:fix": "npm run lint -- --fix",
 		"check": "tsc --project src/tsconfig.json --noEmit && vue-tsc --project src/tsconfig.json --noEmit"

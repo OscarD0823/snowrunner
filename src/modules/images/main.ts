@@ -12,6 +12,7 @@ import yauzl from 'yauzl'
 import { pathToFileURL } from 'node:url'
 import { readGameEntry } from './game-archive'
 import type { GameMeshAsset } from './types'
+import { readGamePaint } from './game-paint'
 
 type GfxTag = { code: number; data: Buffer }
 
@@ -45,17 +46,19 @@ class FileRangeReader extends yauzl.RandomAccessReader {
 /** Extrae las carátulas originales desde la instalación local del juego. */
 export class Images implements IMainImages {
   async prepareMesh(initialPath: string, reference: string): Promise<GameMeshAsset | undefined> {
+    reference = reference.replaceAll('\\', '/')
     if (!/^[a-z0-9_/-]{1,200}$/i.test(reference) || reference.includes('..')) return
+    const paint = await readGamePaint(initialPath, reference.split('/').at(-1)!).catch(()=>undefined)
     const root = dirname(initialPath), shared = join(root, 'shared.pak'), editor = join(root, 'editor.pak')
     const info = await stat(shared)
     const textureInfo = await stat(editor)
-    const signature = createHash('sha256').update(`pbr-v2:${info.size}:${info.mtimeMs}:${textureInfo.size}:${textureInfo.mtimeMs}`).digest('hex').slice(0, 16)
+    const signature = createHash('sha256').update(`pbr-v3:${info.size}:${info.mtimeMs}:${textureInfo.size}:${textureInfo.mtimeMs}`).digest('hex').slice(0, 16)
     const folder = join(this.paths.workspace, 'game-models', signature)
     const flat = reference.replaceAll('/', '_'), meshPath = join(folder, flat + '.bin'), indexPath = meshPath + '.json'
     try {
       const cached = JSON.parse(await readFile(indexPath, 'utf8')) as GameMeshAsset
       await access(meshPath)
-      return cached
+      return {...cached, paint}
     } catch { /* First view or updated game. */ }
     const mesh = await readGameEntry(shared, `[meshes]/${flat}`)
     if (!mesh) return
@@ -65,10 +68,11 @@ export class Images implements IMainImages {
     const textures: Record<string, string> = {}
     await mkdir(folder, { recursive: true })
     // Original PBR maps are read locally; no game assets ship in the app.
-    const refs = [...new Set([...xml.matchAll(/(?:Albedo|Normal|Shading)Map="([^"]+)"/g)].map(m => m[1]))].slice(0, 128)
+    const refs = [...new Set([...xml.matchAll(/(?:Albedo|Normal|Shading|Tint)Map="([^"]+)"/g)].map(m => m[1]))].slice(0, 128)
     for (const ref of refs) {
-      if (!/^[a-z0-9_/. -]{1,200}$/i.test(ref) || ref.includes('..')) continue
-      const name = ref.replaceAll('/', '_').replace(/\.tga$/i, '.dds'), output = join(folder, name)
+      const normalized = ref.replaceAll('\\', '/')
+      if (!/^[a-z0-9_/. -]{1,200}$/i.test(normalized) || normalized.includes('..')) continue
+      const name = normalized.replaceAll('/', '_').replace(/\.tga$/i, '.dds'), output = join(folder, name)
       try {
         await access(output)
       } catch {
@@ -81,7 +85,7 @@ export class Images implements IMainImages {
     await writeFile(meshPath, mesh)
     const result = { meshUrl: pathToFileURL(meshPath).href, textures }
     await writeFile(indexPath, JSON.stringify(result))
-    return result
+    return {...result, paint}
   }
 	@inject(PATHS_TOKEN)
 	private readonly paths!: IPaths

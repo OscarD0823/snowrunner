@@ -29,3 +29,26 @@ export function fitVehicleCamera(camera: THREE.PerspectiveCamera, box: THREE.Box
   camera.lookAt(center); camera.updateProjectionMatrix(); camera.updateMatrixWorld()
   return center
 }
+
+/** Screen-space protection keeps moving scenery from hiding the vehicle. */
+export function vehicleScreenRegion(camera: THREE.PerspectiveCamera, box: THREE.Box3) {
+  const region = { min: new THREE.Vector2(Infinity, Infinity), max: new THREE.Vector2(-Infinity, -Infinity), depth: 0 }
+  for (const x of [box.min.x, box.max.x]) for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) {
+    const point = new THREE.Vector3(x, y, z)
+    region.depth = Math.max(region.depth, -point.clone().applyMatrix4(camera.matrixWorldInverse).z)
+    point.project(camera); region.min.min(new THREE.Vector2(point.x, point.y)); region.max.max(new THREE.Vector2(point.x, point.y))
+  }
+  region.min.addScalar(-.06); region.max.addScalar(.06)
+  return region
+}
+
+export function sceneryOccludesVehicle(camera: THREE.PerspectiveCamera, region: ReturnType<typeof vehicleScreenRegion>, sphere: THREE.Sphere) {
+  const center = sphere.center.clone().applyMatrix4(camera.matrixWorldInverse), depth = -center.z
+  if (depth - sphere.radius >= region.depth) return false // Entirely behind the vehicle.
+  if (depth <= sphere.radius) return true
+  const projected = sphere.center.clone().project(camera)
+  const radiusY = sphere.radius / ((depth - sphere.radius) * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)))
+  const radiusX = radiusY / camera.aspect
+  return projected.x + radiusX > region.min.x && projected.x - radiusX < region.max.x
+    && projected.y + radiusY > region.min.y && projected.y - radiusY < region.max.y
+}

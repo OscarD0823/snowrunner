@@ -54,4 +54,5 @@ export interface IMainImages {
   prepareMesh(initialPath: string, reference: string): Promise<GameMeshAsset | undefined>
 }
 
-export type GameMeshAsset = { meshUrl: string; textures: Record<string, string> }
+export type GamePaint = { override: string; colors: [number, number, number][] }
+export type GameMeshAsset = { meshUrl: string; textures: Record<string, string>; paint?: GamePaint }

@@ -4,8 +4,9 @@ import * as THREE from 'three'
 import { DDSLoader } from 'three/addons/loaders/DDSLoader.js'
 import type { GameMeshAsset } from '@modules/images/types'
 
-type Sub = { material: number; start: number; count: number }
-type Node = { id: number; parent: number; name: string; matrix: THREE.Matrix4; mesh?: THREE.Mesh; skinned: boolean }
+type Sub = { material: number; start: number; count: number; vertexStart: number; vertexCount: number; palette?: number[] }
+type Skin = { matrices: THREE.Matrix4[]; nodes: number[]; weights: Float32Array; indices: Uint8Array; subs: Sub[] }
+type Node = { id: number; parent: number; name: string; matrix: THREE.Matrix4; mesh?: THREE.Mesh; skinned: boolean; skin?: Skin }
 const modelTextures = new WeakMap<THREE.Object3D, THREE.Texture[]>()
 class Reader {
   offset = 0
@@ -40,20 +41,23 @@ export function parseCombineMesh(data: Uint8Array, trace?: (data: unknown) => vo
     const triangleCount = r.count(2000000), meshName = r.name(); r.i32()
     const materialCount = r.count(4096); r.i32()
     const materials = Array.from({ length: materialCount }, () => r.name())
-    const links = r.count(4096); r.skip(links * 64); r.i16()
+    const links = r.count(4096), linkMatrices = Array.from({ length: links }, () => r.matrix()); r.i16()
     let subs: Sub[] = []
-    const sub = () => { const material = r.i32(), start = r.i32(), count = r.i32(); r.i32(); r.i32(); return { material, start, count } }
+    let linkedNodes: number[] = []
+    const sub = (): Sub => { const material = r.i32(), start = r.i32(), count = r.i32(), vertexStart = r.i32(), vertexCount = r.i32(); return { material, start, count, vertexStart, vertexCount } }
     if (!links) {
       r.skip(24); const n = r.count(4096); subs = Array.from({ length: n }, sub)
     } else {
       r.i16(); const n = r.count(4096), counts = Array.from({ length: n }, () => r.count(4096))
-      subs = counts.map(n => { const s = sub(); r.skip(n * 4); return s })
-      r.skip(links * 2 + 24 + 24)
+      subs = counts.map(n => { const s = sub(); s.palette = Array.from({length:n}, () => r.i32()); return s })
+      linkedNodes = Array.from({ length: links }, () => r.i16())
+      r.skip(24 + 24)
     }
     const defCount = r.count(64), definitions: number[] = []
     for (let i = 0; i < defCount; i++) { r.i16(); r.i16(); r.u16(); definitions.push(r.u16()) }
     r.i32(); r.i32()
     const positions = new Float32Array(vertexCount * 3), uv = new Float32Array(vertexCount * 2), normals = new Float32Array(vertexCount * 3)
+    const weights = new Float32Array(links ? vertexCount * 4 : 0), skinIndices = new Uint8Array(links ? vertexCount * 4 : 0)
     for (let v = 0; v < vertexCount; v++) {
       for (const type of definitions) {
         if (type === 0) positions.set(r.floats(3), v * 3)
@@ -62,7 +66,14 @@ export function parseCombineMesh(data: Uint8Array, trace?: (data: unknown) => vo
           for (let axis = 0; axis < 3; axis++) { const b = r.data[r.offset + axis]; normals[v * 3 + axis] = (b - 128) / (b >= 128 ? 127 : 128) }
           r.skip(4)
         } else if (type === 0x605) r.skip(8)
-        else if ([0x205, 0x305, 0x405, 0x505].includes(type)) r.skip(4)
+        else if (type === 0x405 || type === 0x505) {
+          const offset = r.offset; r.skip(4)
+          if (links) for (let slot=0; slot<4; slot++) {
+            if (type === 0x405) weights[v*4+slot] = r.data[offset+slot] / 255
+            else skinIndices[v*4+slot] = r.data[offset+slot]
+          }
+        }
+        else if ([0x205, 0x305].includes(type)) r.skip(4)
         else throw new Error(`Unsupported vertex item ${type}`)
       }
     }
@@ -85,6 +96,7 @@ export function parseCombineMesh(data: Uint8Array, trace?: (data: unknown) => vo
     const mesh = new THREE.Mesh(geometry, mats.length ? mats : new THREE.MeshStandardMaterial())
     mesh.name = meshName; mesh.castShadow = true; mesh.receiveShadow = true
     node.mesh = mesh; node.skinned = links > 0
+    if (links) node.skin = {matrices:linkMatrices,nodes:linkedNodes,weights,indices:skinIndices,subs}
   }
   const byId = new Map(nodes.map(n => [n.id, n])), worlds = new Map<Node, THREE.Matrix4>()
   function world(node: Node, seen = new Set<Node>()): THREE.Matrix4 {
@@ -97,7 +109,32 @@ export function parseCombineMesh(data: Uint8Array, trace?: (data: unknown) => vo
   const model = new THREE.Group()
   for (const node of nodes) {
     if (!node.mesh) continue
-    if (!node.skinned) node.mesh.geometry.applyMatrix4(world(node))
+    if (node.skin) {
+      const skin = node.skin, geometry = node.mesh.geometry
+      const transforms = skin.matrices.map((bind,i) => {
+        const bone = byId.get(skin.nodes[i])
+        if (!bone) throw new Error('Missing skin bone')
+        return world(bone).clone().multiply(bind)
+      })
+      const normalTransforms = transforms.map(m => new THREE.Matrix3().getNormalMatrix(m))
+      const position = geometry.getAttribute('position'), normal = geometry.getAttribute('normal')
+      const palettes: Array<number[] | undefined> = new Array(position.count)
+      for (const sub of skin.subs) for (let v=sub.vertexStart; v<Math.min(sub.vertexStart+sub.vertexCount,position.count); v++) palettes[v]=sub.palette
+      const p = new THREE.Vector3(), n = new THREE.Vector3(), out = new THREE.Vector3(), outNormal = new THREE.Vector3(), temp = new THREE.Vector3()
+      for (let v=0; v<position.count; v++) {
+        p.fromBufferAttribute(position,v); n.fromBufferAttribute(normal,v); out.set(0,0,0); outNormal.set(0,0,0)
+        let total = 0
+        for (let slot=0; slot<4; slot++) {
+          const weight = skin.weights[v*4+slot]
+          if (!weight) continue
+          const local = skin.indices[v*4+slot], index = palettes[v]?.[local] ?? local
+          if (!transforms[index]) throw new Error('Invalid skin palette')
+          out.addScaledVector(temp.copy(p).applyMatrix4(transforms[index]),weight)
+          outNormal.addScaledVector(temp.copy(n).applyMatrix3(normalTransforms[index]),weight); total += weight
+        }
+        if (total) { out.divideScalar(total); outNormal.normalize(); position.setXYZ(v,out.x,out.y,out.z); normal.setXYZ(v,outNormal.x,outNormal.y,outNormal.z) }
+      }
+    } else node.mesh.geometry.applyMatrix4(world(node))
     model.add(node.mesh)
   }
   model.userData.xml = xml
@@ -107,13 +144,18 @@ export function parseCombineMesh(data: Uint8Array, trace?: (data: unknown) => vo
   return model
 }
 
-export async function loadGameMesh(asset: GameMeshAsset) {
+export async function loadGameMesh(asset: GameMeshAsset, paint = asset.paint) {
   const response = await fetch(asset.meshUrl)
   if (!response.ok) throw new Error('Model could not be read')
   const model = parseCombineMesh(new Uint8Array(await response.arrayBuffer()))
   try {
     const xml = new DOMParser().parseFromString(model.userData.xml, 'application/xml'), defs = new Map<string, Element>()
     xml.querySelectorAll('Material').forEach(element => defs.set(element.getAttribute('Name') ?? '', element))
+    if (paint) for (const override of xml.querySelectorAll('MaterialOverride')) {
+      if (override.getAttribute('Name') !== paint.override) continue
+      const def = defs.get(override.getAttribute('TargetMaterialName') ?? '')
+      if (def) for (const attribute of override.attributes) if (!['Name','TargetMaterialName'].includes(attribute.name)) def.setAttribute(attribute.name,attribute.value)
+    }
     const loader = new DDSLoader(), textures = new Map<string, THREE.CompressedTexture>()
     const colorRefs = new Set([...defs.values()].map(def => def.getAttribute('AlbedoMap')))
     await Promise.all(Object.entries(asset.textures).map(async ([ref, url]) => {
@@ -140,6 +182,8 @@ export async function loadGameMesh(asset: GameMeshAsset) {
           material.aoMapIntensity = finiteAttribute(def, 'AmbientOcclusionIntensity', 1)
           material.envMapIntensity = Math.min(3, finiteAttribute(def, 'ReflectivityMultiplier', 1))
           const metalBias = finiteAttribute(def, 'MetalnessBias', 0), roughBias = finiteAttribute(def, 'RoughnessBias', 0)
+          const tint = paint ? textures.get(def?.getAttribute('TintMap') ?? '') : undefined
+          const colors = paint?.colors.map(([r,g,b])=>new THREE.Color().setRGB(r/255,g/255,b/255,THREE.SRGBColorSpace))
           // Saber packs metalness/R, roughness/G, AO/B; Three expects AO/R, roughness/G, metalness/B.
           material.onBeforeCompile = shader => {
             shader.uniforms.gameMetalBias = { value: metalBias }; shader.uniforms.gameRoughBias = { value: roughBias }
@@ -148,8 +192,14 @@ export async function loadGameMesh(asset: GameMeshAsset) {
               .replace('#include <metalnessmap_fragment>', THREE.ShaderChunk.metalnessmap_fragment.replace('texelMetalness.b', 'texelMetalness.r') + '\nmetalnessFactor = clamp(metalnessFactor + gameMetalBias, 0.0, 1.0);')
               .replace('#include <roughnessmap_fragment>', THREE.ShaderChunk.roughnessmap_fragment + '\nroughnessFactor = clamp(roughnessFactor + gameRoughBias, 0.04, 1.0);')
               .replace('#include <aomap_fragment>', THREE.ShaderChunk.aomap_fragment.replace('vAoMapUv ).r', 'vAoMapUv ).b'))
+            if (tint && material.map && colors?.length === 3) {
+              shader.uniforms.gameTintMap = {value:tint}
+              shader.uniforms.gameTintColors = {value:colors}
+              shader.fragmentShader = 'uniform sampler2D gameTintMap;\nuniform vec3 gameTintColors[3];\n'+shader.fragmentShader
+              shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', THREE.ShaderChunk.map_fragment+'\nvec3 gameTint = texture2D(gameTintMap, vMapUv).rgb;\ndiffuseColor.rgb *= mix(vec3(1.0),gameTintColors[0],gameTint.r) * mix(vec3(1.0),gameTintColors[1],gameTint.g) * mix(vec3(1.0),gameTintColors[2],gameTint.b);')
+            }
           }
-          material.customProgramCacheKey = () => 'saber-pbr-v2'
+          material.customProgramCacheKey = () => 'saber-pbr-v3-' + Boolean(tint && material.map)
           material.color.set(material.map ? 0xffffff : /glass/i.test(material.name) ? 0x697f86 : 0xc8c9c4)
           if (def?.getAttribute('Blending') === 'alpha') { material.transparent = true; material.opacity = 1; material.depthWrite = false; material.side = THREE.FrontSide }
           if (def?.getAttribute('AlphaKill') === 'true') material.alphaTest = .4
@@ -160,6 +210,7 @@ export async function loadGameMesh(asset: GameMeshAsset) {
     // Object3D.clone serializes userData: keep GPU resources out of it.
     modelTextures.set(model, [...textures.values()])
     model.userData.materials = { expected: Object.keys(asset.textures).length, loaded: textures.size }
+    model.userData.paint = paint
     return model
   } catch (error) { disposeGameModel(model); throw error }
 }

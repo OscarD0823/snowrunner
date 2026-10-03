@@ -10,9 +10,13 @@ La versión `2.5.0` incluye:
 
 - vehículo siempre visible en un panel lateral y ajustes con desplazamiento independiente a su derecha;
 - cámara que encuadra el modelo completo, también al dividir la pantalla o cambiar ruedas y suspensión;
+- paisaje animado que no tapa el vehículo, incluso con remolques largos;
 - materiales originales con relieve, rugosidad, metal y oclusión, conservando los canales PBR definidos por Saber;
+- máscaras de pintura originales con el primer esquema de color disponible en el juego;
 - selección correcta de la cabina exterior, sin superponer mallas interiores ni superficies auxiliares de agua;
 - selección separada de las ruedas delanteras y dobles traseras, con la llanta predeterminada del XML;
+- pose original de accesorios y piezas articuladas reconstruida con los pesos y matrices de cada modelo;
+- ruedas individuales de remolques montadas con el radio y anchura de sus clases;
 - selector de neumáticos o suspensión visible únicamente al editar ese componente;
 - campos, etiquetas y recomendaciones adaptables al ancho del editor, sin desplazamiento lateral en media pantalla;
 - animación del camión también dentro de la biblioteca;
@@ -79,11 +83,11 @@ La distribución actual es exclusiva de GitHub. La preparación anterior para Mi
 
 ## Publicar una versión
 
-El visor usa la geometría y los mapas de color, normales y sombreado originales disponibles localmente. La iluminación, los terrenos y el movimiento son una escena propia: no ejecuta el motor de SnowRunner, no calcula agarre ni reproduce su física. Los selectores del visor son de previsualización; los parámetros editables se guardan únicamente con **Guardar**. No se simulan cambios visibles de motor. Se muestra el chasis con los accesorios predeterminados del XML, no los accesorios ni la pintura de una partida guardada. Los modelos compilados personalizados de mods todavía usan su carátula. Las bibliotecas conservan miniaturas representativas para neumáticos y remolques; el modelo original se carga dentro del editor.
+El visor usa la geometría y los mapas de color, normales y sombreado originales disponibles localmente. La iluminación, los terrenos y el movimiento son una escena propia: no ejecuta el motor de SnowRunner, no calcula agarre ni reproduce su física. Los selectores del visor son de previsualización; los parámetros editables se guardan únicamente con **Guardar**. No se simulan cambios visibles de motor. Se muestra el chasis con los accesorios predeterminados del XML y el esquema de pintura número 0 cuando está disponible, no los accesorios ni la pintura de una partida guardada. Las referencias de accesorios ausentes en los archivos del juego no se sustituyen por piezas inventadas. Los modelos compilados personalizados de mods todavía usan su carátula. Las bibliotecas conservan miniaturas representativas para neumáticos y remolques; el modelo original se carga dentro del editor.
 
 Las reglas de materiales y cabinas siguen la documentación oficial de Saber: [Material](https://expeditions-guides.saber.games/truck_modding/tags_and_attributes_of_trucks/combinexmesh/material/), [Truck meshes](https://expeditions-guides.saber.games/truck_modding/general_info/fbx_file_structure/truck_meshes/) y [Special meshes](https://expeditions-guides.saber.games/truck_modding/general_info/fbx_file_structure/special_meshes/). Para comprobar cada vehículo y remolque instalado en la aplicación, ejecutar `$env:SNOWRUNNER_ALL_MODELS='1'; node scripts/test-library-ui.mjs` después de generar el ejecutable.
 
-En la instalación comprobada se verificó la lectura de 184 modelos distintos del catálogo. Los archivos extraídos permanecen en la caché local `game-models`; no entran en GitHub ni en el instalador.
+En la instalación comprobada se verificó la lectura de 184 modelos distintos y 457 accesorios predeterminados. La prueba visual recorre los 118 camiones y 68 remolques del catálogo, comprobando texturas, ruedas y encuadre. Los archivos extraídos permanecen en la caché local `game-models`; no entran en GitHub ni en el instalador.
 
 Actualiza la versión de `package.json`, crea un tag con el formato `vX.Y.Z` y súbelo a GitHub. El flujo de GitHub Actions compila el instalador y adjunta `Setup.exe`, el paquete `.nupkg` y `RELEASES` a una nueva publicación. Las instalaciones existentes consultan esas publicaciones al abrirse y cada 30 minutos.
 

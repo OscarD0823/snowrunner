@@ -38,9 +38,12 @@ import { loadLocalization, Localization, LocalizationStrings } from '@localizati
 import { XMLElement, Wheel, type TruckXML, type Wheels, type Suspensions } from '@modules/xml/renderer'
 import { di } from '@utilities/di/container'
 import { GAME_TEXTS_TOKEN, IMAGES_TOKEN, DIRS_TOKEN } from '@utilities/di/renderer/tokens'
+import type { IDir, IFile } from '@modules/files/types'
 import { useEditorStore } from '@renderer/pages/general/store/editor'
 import { DrivingStage, type Terrain } from '@renderer/utilities/driving-stage'
 import { disposeGameModel, loadGameMesh } from '@renderer/utilities/combine-mesh'
+import { addonPlacement } from '@renderer/utilities/addon-placement'
+import { wheelPlacement } from '@renderer/utilities/wheel-placement'
 import type { VehiclePreviewContext } from '@renderer/utilities/vehicle-appearance'
 
 const texts = loadLocalization(new Localization({
@@ -67,6 +70,7 @@ const host = ref<HTMLElement>(), state = ref('loading'), moving = ref(!matchMedi
 const terrain = ref<Terrain>('auto')
 let stage: DrivingStage | undefined, disposed = false, request = 0, poll: ReturnType<typeof setInterval> | undefined
 let body: THREE.Group | undefined, wheelModels: THREE.Group[] = []
+const individualWheels = new Map<string, { mesh: string; radius: number; width: number }>()
 type TireChoice = { label: string; mesh: string; rim?: string; scale: () => number; xml: Wheels | undefined; name: string }
 type SuspensionChoice = { label: string; name: string; height: () => number }
 const tireChoices = ref<TireChoice[]>([]), suspensionChoices = ref<SuspensionChoice[]>([])
@@ -95,6 +99,7 @@ onMounted(async () => {
     if (disposed) return
     stage.setBody(model)
     await loadOptions()
+    host.value!.dataset.expectedWheels = String(props.xml.TruckData?.Wheels?.Wheels.length ?? 0)
     const selectedTireIndex = tireChoices.value.findIndex(choice => choice.mesh === props.selectedTire)
     const selectedSuspensionIndex = suspensionChoices.value.findIndex(choice => choice.name === props.selectedSuspension)
     if (selectedTireIndex >= 0) tireId.value = selectedTireIndex
@@ -103,55 +108,82 @@ onMounted(async () => {
     if (disposed) return
     updateAppearance(); stage.resetCamera(); state.value = 'ready'
     host.value!.dataset.materials = JSON.stringify(model.userData.materials)
+    host.value!.dataset.addons = JSON.stringify(model.userData.addons)
     poll = setInterval(updateAppearance, 300)
   } catch (error) { if (!disposed) { state.value = 'unavailable'; console.warn('Vista del vehículo:', error) } }
 })
 async function loadDefaultAddons(model: THREE.Group) {
   const dirs = di.resolve(DIRS_TOKEN), info = useEditorStore().info
   if (info.mod) return
-  const baseName = meshRef.value?.split('/').pop() ?? ''
+  const baseName = meshRef.value?.split(/[\\/]/).pop() ?? ''
   const roots = [dirs.classes.dir('trucks')]
   if (info.dlc) roots.unshift(dirs.dlc.dir(info.dlc, 'classes', 'trucks'))
+  // Some DLC vehicles reuse an accessory from a different DLC.
+  if (await dirs.dlc.exists()) for (const entry of await dirs.dlc.read()) {
+    if (entry.basename() !== info.dlc && await entry.isDir()) roots.push(entry.asDir().dir('classes','trucks'))
+  }
+  const summary = { loaded: [] as string[], nonvisual: [] as string[], missingFiles: [] as string[], unavailable: [] as string[] }
+  const discovered = new Map<IDir, Promise<IFile[]>>()
+  model.userData.addons = summary
   const sockets = props.xml.selectAll('GameData > AddonSockets')
   for (const socket of sockets.slice(0, 40)) {
     const name = socket.getAttr('DefaultAddon')?.str
     if (!name || !/^[a-z0-9_-]+$/i.test(name)) continue
+    let found = false
+    let defined = false
     try {
       for (const root of roots) {
-        const candidates = [root.dir(baseName + '_tuning').file(name + '.xml'), root.dir('addons').file(name + '.xml'), root.file(name + '.xml')]
-        let found = false
+        let candidates = [root.dir(baseName + '_tuning').file(name + '.xml'), root.dir('addons').file(name + '.xml'), root.file(name + '.xml')]
+        const existing = await Promise.all(candidates.map(file=>file.exists()))
+        candidates = candidates.filter((_,i)=>existing[i])
+        // Variants such as ANK CIVIL reuse the parent truck's tuning folder.
+        if (!candidates.length) {
+          if (!discovered.has(root)) discovered.set(root,root.findFiles({ext:'xml',recursive:true}))
+          candidates = (await discovered.get(root)!).filter(file=>file.name === name)
+        }
         for (const file of candidates) {
-          if (!await file.exists()) continue
+          defined = true
           const xml = await XMLElement.from(file), mesh = xml?.select('TruckAddon > PhysicsModel')?.getAttr('Mesh')?.str
-          if (!mesh) continue
+          if (!mesh) {
+            if (xml?.select('TruckAddon')) { summary.nonvisual.push(name); found = true; break }
+            continue
+          }
           const asset = await images.getMesh(mesh)
           if (!asset) continue
-          const addon = await loadGameMesh(asset)
+          const addon = await loadGameMesh(asset,model.userData.paint)
           if (disposed) { disposeGameModel(addon); return }
-          const frame = xml?.select('TruckAddon > PhysicsModel > Body')?.getAttr('ModelFrame')?.str
-          const installType = xml?.select('TruckAddon > GameData > InstallSocket')?.getAttr('Type')?.str
+          const install = xml?.select('TruckAddon > GameData > InstallSocket')
+          const installType = install?.getAttr('Type')?.str
           const attachment = socket.selectAll('Socket').find(s => s.getAttr('Names')?.str.split(',').map(n => n.trim()).includes(installType ?? ''))
-          const parent = attachment?.getAttr('ParentFrame')?.str ?? frame
-          const vehicleFrame = parent ? model.userData.frames?.[parent] : undefined
-          const addonFrame = frame ? addon.userData.frames?.[frame] : undefined
-          // Align the accessory's authored rest frame, not an arbitrary bounding-box center.
-          if (vehicleFrame && addonFrame) {
-            const offset = attachment?.getAttr('Offset')?.str.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [0, 0, 0]
-            addon.applyMatrix4(new THREE.Matrix4().fromArray(vehicleFrame)
-              .multiply(new THREE.Matrix4().makeTranslation(offset[0] ?? 0, offset[1] ?? 0, offset[2] ?? 0))
-              .multiply(new THREE.Matrix4().fromArray(addonFrame).invert()))
-          }
+          // ParentFrame controls dynamic attachment, not the authored rest coordinates.
+          // Applying its matrix here a second time made bumpers, horns and spare tires float.
+          addon.position.copy(addonPlacement(attachment?.getAttr('Offset')?.str, install?.getAttr('Offset')?.str))
           model.add(addon); found = true; break
         }
         if (found) break
       }
     } catch { /* An optional accessory must not prevent opening a vehicle. */ }
+    if (found && !summary.nonvisual.includes(name)) summary.loaded.push(name)
+    else if (!found) (defined ? summary.unavailable : summary.missingFiles).push(name)
   }
 }
 async function loadOptions() {
   const data = props.xml.TruckData, info = useEditorStore().info
   if (!data) return
   const defaultType = data.Wheels?.DefaultWheelType
+  if (!defaultType && data.Wheels?.Wheels.length) {
+    const dirs = di.resolve(DIRS_TOKEN)
+    for (const type of new Set(data.Wheels.Wheels.map(wheel=>wheel.Type).filter((type): type is string => Boolean(type)))) {
+      if (!/^[a-z0-9_-]+$/i.test(type)) continue
+      const files = [dirs.classes.dir('wheels').file(type+'.xml')]
+      if (info.dlc) files.unshift(dirs.dlc.dir(info.dlc,'classes','wheels').file(type+'.xml'))
+      for (const file of files) {
+        if (!await file.exists()) continue
+        const wheel = await Wheel.from(file), mesh = wheel?.getAttrWT('Mesh')?.str
+        if (mesh) { individualWheels.set(type,{mesh,radius:Number(wheel?.Radius ?? .5),width:Number(wheel?.Width ?? .5)}); break }
+      }
+    }
+  }
   const candidates = data.CompatibleWheels
   const wheels = await data.Wheels?.defaultWheel(info)
   const add = (pack: Wheels | undefined, scale: () => number) => {
@@ -190,7 +222,36 @@ async function loadOptions() {
 }
 async function changeTires() {
   const current = ++request, choice = tireChoices.value[tireId.value]
-  if (!stage || !choice) return
+  if (!stage) return
+  if (!choice && individualWheels.size) {
+    const sources = new Map<string, THREE.Group>(), loaded: THREE.Group[] = []
+    try {
+      const units: Parameters<DrivingStage['setWheels']>[0] = []
+      for (const wheel of props.xml.TruckData?.Wheels?.Wheels ?? []) {
+        const spec = individualWheels.get(wheel.Type ?? '')
+        if (!spec) throw new Error('Missing individual wheel: '+wheel.Type)
+        let source = sources.get(spec.mesh)
+        if (!source) {
+          const asset = await images.getMesh(spec.mesh)
+          if (!asset) throw new Error('Missing wheel mesh: '+spec.mesh)
+          source = await loadGameMesh(asset); sources.set(spec.mesh,source); loaded.push(source)
+        }
+        const pos = wheel.Pos, right = wheel.getAttrWT('RightSide')?.str === 'true'
+        // Single TruckWheel meshes already have their authored radius/width.
+        const model = source.clone(true), size = new THREE.Box3().setFromObject(source).getSize(new THREE.Vector3())
+        const radius = Math.max(size.x,size.y)/2
+        model.scale.set(spec.radius/radius,spec.radius/radius,spec.width/Math.max(size.z,.01))
+        const parent = wheel.getAttrWT('ParentFrame')?.str
+        const frame = wheel.getAttrWT('PosInLocalFrame')?.str === 'true' && parent ? body?.userData.frames?.[parent] : undefined
+        units.push({model,...wheelPlacement([Number(pos?.x ?? 0),Number(pos?.y ?? spec.radius),Number(pos?.z ?? 0)],right,frame),scale:1,right,radius:spec.radius})
+      }
+      if (disposed || current !== request) { loaded.forEach(disposeGameModel); return }
+      stage.setWheels(units); wheelModels.forEach(disposeGameModel); wheelModels=loaded
+      host.value!.dataset.expectedWheels = String(props.xml.TruckData?.Wheels?.Wheels.length ?? 0)
+    } catch (error) { loaded.forEach(disposeGameModel); throw error }
+    return
+  }
+  if (!choice) return
   try {
     const asset = await images.getMesh(choice.mesh), rimAsset = choice.rim ? await images.getMesh(choice.rim) : undefined
     if (!asset) return
@@ -201,17 +262,19 @@ async function changeTires() {
       const pos = wheel.Pos
       const xyz: [number, number, number] = [Number(pos?.x ?? 0), Number(pos?.y ?? choice.scale()), Number(pos?.z ?? 0)]
       const right = wheel.getAttrWT('RightSide')?.str === 'true'
-      if (right) xyz[2] *= -1
+      const parent = wheel.getAttrWT('ParentFrame')?.str
+      const frame = wheel.getAttrWT('PosInLocalFrame')?.str === 'true' && parent ? body?.userData.frames?.[parent] : undefined
       const model = tire.clone(true)
       // Composite wheels contain front and double rear versions in one file.
       model.traverse(object => {
         if (/(?:rear|back)/i.test(object.name)) object.visible = wheel.Location === 'rear'
         if (/front/i.test(object.name)) object.visible = wheel.Location !== 'rear'
       })
-      return { model, position: xyz, scale: choice.scale(), right }
+      return { model, ...wheelPlacement(xyz,right,frame), scale: choice.scale(), right }
     })
     stage.setWheels(units)
     host.value!.dataset.tire = choice.mesh
+    host.value!.dataset.expectedWheels = String(props.xml.TruckData?.Wheels?.Wheels.length ?? 0)
     wheelModels.forEach(disposeGameModel); wheelModels = [tire]
     updateAppearance()
   } catch (error) { console.warn('No se pudo mostrar ese neumático.', error) }
