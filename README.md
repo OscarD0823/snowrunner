@@ -6,7 +6,9 @@ La aplicación permite explorar vehículos y remolques, cambiar sus parámetros 
 
 ## Estado del proyecto
 
-La versión `2.5.0` incluye:
+La versión `2.5.1` incluye:
+
+- identificador `@OscarD0823` enlazado a su perfil de GitHub y acceso «Repo» al repositorio de SnowRunner Studio, visibles también al dividir la pantalla;
 
 - vehículo siempre visible en un panel lateral y ajustes con desplazamiento independiente a su derecha;
 - cámara que encuadra el modelo completo, también al dividir la pantalla o cambiar ruedas y suspensión;

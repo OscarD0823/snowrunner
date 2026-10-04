@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process'
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { testProjectLinks } from './project-links-ui.mjs'
 
 const repo = dirname(dirname(fileURLToPath(import.meta.url)))
 const exe = process.env.SNOWRUNNER_APP_EXE || join(repo, 'out', 'SnowRunner Studio-win32-x64', 'SnowRunner Studio.exe')
@@ -137,6 +138,11 @@ for (let attempt = 0; attempt < 160; attempt++) {
 	await new Promise(resolve => setTimeout(resolve, 250))
 }
 
+const projectLinks=await testProjectLinks({evaluate,call,output:outputDir,repository:'snowrunner'})
+if(process.env.SNOWRUNNER_LINKS_ONLY==='1'){
+  await writeFile(join(outputDir,'project-links-results.json'),JSON.stringify(projectLinks,null,2))
+  console.log(JSON.stringify(projectLinks,null,2))
+} else {
 for (let attempt = 0; attempt < 800; attempt++) {
 	if (await evaluate(`[...document.querySelectorAll('.card-container img')].some(image => image.src.includes('/game-images/'))`)) break
 	await new Promise(resolve => setTimeout(resolve, 125))
@@ -436,6 +442,7 @@ if (allModelChecks.length) {
   }
 }
 console.log(JSON.stringify({ trucks: truckState.cards, fords, editorLayouts, trailers, components: Object.fromEntries(Object.entries(categories).map(([label, state]) => [label, { cards: state.cards, rendered: state.rendered, editor: state.editor.title, help: state.editor.help }])), errors: diagnostics.filter(text => /error|failed|uncaught/i.test(text)), failedRequests: networkFailures.length }, null, 2))
+}
 } finally {
 	socket?.close()
 	child.kill()

@@ -13,7 +13,10 @@
         </div>
         <div class="brand-copy">
           <strong>SnowRunner Studio</strong>
-          <span>{{ texts.brandSubtitle }}</span>
+          <nav class="project-links" :aria-label="texts.projectLinks">
+            <a :href="links.profile" target="_blank" rel="noopener noreferrer" data-project-link="profile" :title="texts.githubAuthor" @click.prevent="system.openLink(links.profile)"><GithubOutlined />@OscarD0823</a>
+            <a :href="links.github" target="_blank" rel="noopener noreferrer" data-project-link="repository" :title="texts.githubRepository" :aria-label="texts.githubRepository" @click.prevent="system.openLink(links.github)">Repo ↗</a>
+          </nav>
         </div>
       </div>
       <div class="topbar__actions">
@@ -114,6 +117,7 @@ const { setCategory, setSource } = listStore
 
 /** Ссылки на медиа ресурсы. */
 const links = {
+  profile: 'https://github.com/OscarD0823',
 	/** github.com. */
 	github: 'https://github.com/OscarD0823/snowrunner',
 	releases: 'https://github.com/OscarD0823/snowrunner/releases'
@@ -473,6 +477,12 @@ function openWhatsNew() {
 	}
 }
 
+.project-links { display:flex;align-items:center;gap:9px;margin-top:2px;white-space:nowrap;user-select:text; }
+.project-links a { display:inline-flex;align-items:center;gap:4px;min-height:24px;font-size:11px;text-decoration:none;color:#b5c8dd;border-radius:4px; }
+.project-links a:hover { color:#ffb46e;text-decoration:underline; }
+.project-links a:focus-visible { outline:2px solid #ffb46e;outline-offset:2px;color:#fff; }
+.project-links :deep(.anticon) { font-size:13px; }
+
 .workspace-bar {
 	display: flex;
 	align-items: center;
@@ -585,9 +595,11 @@ function openWhatsNew() {
 		min-width: auto;
 	}
 
-	.brand-copy {
+	.brand-copy > strong {
 		display: none;
 	}
+
+  .project-links { margin:0;gap:7px; }
 
 	.workspace-navigation__item {
 		padding: 0 10px;
@@ -601,7 +613,7 @@ function openWhatsNew() {
 @media (max-width: 920px) {
 	.menu {
 		flex: 0 1 auto;
-		min-width: 0;
+		min-width: 40px;
 
 		:deep(.ant-menu-title-content) {
 			display: none;

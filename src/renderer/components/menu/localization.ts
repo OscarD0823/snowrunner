@@ -2,6 +2,9 @@ import { Localization, LocalizationStrings } from '@localization'
 import { loadLocalization } from '@localization/renderer'
 
 export const MENU_LOCALIZATION = loadLocalization(new Localization({
+  projectLinks: new LocalizationStrings().es('Autor y proyecto en GitHub').en('Author and project on GitHub'),
+  githubAuthor: new LocalizationStrings().es('Abrir el perfil de @OscarD0823 en GitHub').en('Open @OscarD0823 on GitHub'),
+  githubRepository: new LocalizationStrings().es('Abrir el repositorio de SnowRunner Studio en GitHub').en('Open the SnowRunner Studio repository on GitHub'),
 	brandSubtitle: new LocalizationStrings()
 		.es('Estudio de configuración de vehículos')
 		.en('Vehicle configuration studio'),
