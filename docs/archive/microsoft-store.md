@@ -1,4 +1,4 @@
-# Preparación para Microsoft Store
+# Preparación para Microsoft Store · Archivo histórico
 
 > Documento histórico. Desde la versión 2.4.0 se distribuye únicamente en GitHub; los comandos MSIX ya no están activos.
 

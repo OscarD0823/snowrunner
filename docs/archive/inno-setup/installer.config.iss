@@ -1,3 +1,5 @@
+; Archivo histórico, no utilizado por la compilación actual.
+; Las rutas relativas pertenecen a su ubicación anterior; no ejecutar este script archivado.
 #define MyAppName "SnowRunner Studio"
 #define MyAppVersion "0.1.0"
 #define MyAppPublisher "OscarD0823"
