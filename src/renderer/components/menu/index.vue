@@ -19,6 +19,7 @@
           </nav>
         </div>
       </div>
+      <GameBrief />
       <div class="topbar__actions">
         <Language compact />
         <Tooltip :title="texts.settingsMenuLabel">
@@ -81,6 +82,7 @@
 </template>
 
 <script lang='ts' setup>
+import GameBrief from '@renderer/components/game-brief.vue'
 import { AppstoreAddOutlined, CarOutlined, CloudDownloadOutlined, ContainerOutlined, DashboardOutlined, DatabaseOutlined, EditOutlined, FileOutlined, FolderOpenOutlined, GithubOutlined, InfoCircleOutlined, LinkOutlined, LogoutOutlined, QuestionCircleOutlined, RollbackOutlined, SaveOutlined, SettingOutlined, SyncOutlined, ThunderboltOutlined } from '@ant-design/icons-vue'
 import { Page } from '@modules/windows/enums'
 import { Category, SourceType } from '@renderer/pages/general/enums'

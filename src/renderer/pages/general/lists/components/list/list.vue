@@ -5,7 +5,6 @@
     class="list"
     :class="{ 'list--rows': listMode === ListMode.list }"
   >
-    <GameBrief />
     <div class="list-summary">
       <strong>{{ files[source].length }} {{ texts.resultCount }}</strong>
       <span><InfoCircleOutlined /> {{ texts.openHint }}</span>
@@ -48,7 +47,6 @@
 
 <script lang='ts' setup>
 import { InfoCircleOutlined } from '@ant-design/icons-vue'
-import GameBrief from '@renderer/components/game-brief.vue'
 import Spin from '@renderer/components/spin.vue'
 import { di } from '@utilities/di/container'
 import { APP_TOKEN } from '@utilities/di/renderer/tokens'

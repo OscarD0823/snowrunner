@@ -1,234 +1,157 @@
 <template>
   <div
     v-if="loading.state.isLoading"
-    class="wrapper"
+    class="loading-screen"
+    data-loading-screen
   >
-    <div class="ambient ambient--one" />
-    <div class="ambient ambient--two" />
-    <main
-      class="splash"
-      aria-live="polite"
-    >
-      <div class="brand">
-        <span>SnowRunner</span>
-        <strong>Studio</strong>
-      </div>
+    <main class="splash" aria-label="SnowRunner Studio" aria-busy="true">
+      <header class="splash__brand">
+        <img :src="appIcon" alt="">
+        <div>
+          <strong>SnowRunner Studio</strong>
+          <span>{{ texts.expedition }}</span>
+        </div>
+      </header>
       <StartupJourney class="loading-journey" loop />
-      <Title
-        class="title"
-        :level="4"
-      >
-        {{ loading.state.text || 'Preparando el estudio…' }}
-      </Title>
-      <AntProgress
-        v-if="loading.state.stagesCount !== 1"
-        class="progress"
-        type="line"
-        :percent="loading.percent.value"
-        :status="progressStatus"
-        :show-info="progressStatus !== 'success'"
-        stroke-color="#f97316"
-        trail-color="rgba(255, 255, 255, 0.12)"
-      />
-      <div
-        v-else
-        class="activity-dots"
-        aria-label="Cargando"
-      >
-        <i /><i /><i />
+      <div class="loading-details">
+        <p class="title" role="status" aria-live="polite">
+          {{ loadingText }}
+        </p>
+        <AntProgress
+          v-if="loading.state.stagesCount !== 1"
+          class="progress"
+          type="line"
+          :percent="loading.percent.value"
+          :status="progressStatus"
+          :show-info="progressStatus !== 'success'"
+          stroke-color="#7adbd2"
+          trail-color="rgba(255, 255, 255, 0.12)"
+        />
+        <div v-else class="activity-dots" aria-hidden="true">
+          <i /><i /><i />
+        </div>
       </div>
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
+import { loadLocalization, Localization, LocalizationStrings } from '@localization/renderer'
 import { di } from '@utilities/di/container'
 import { LOADING_TOKEN, MESSAGES_TOKEN } from '@utilities/di/renderer/tokens'
 import type { ProgressProps } from 'ant-design-vue'
-import { Progress as AntProgress, Typography } from 'ant-design-vue'
+import { Progress as AntProgress } from 'ant-design-vue'
 import { computed } from 'vue'
 import StartupJourney from './startup-journey.vue'
 
 const loading = di.resolve(LOADING_TOKEN)
 const messages = di.resolve(MESSAGES_TOKEN)
+const appIcon = new URL('../../images/app-icon.svg', import.meta.url).href
+const texts = loadLocalization(new Localization({
+	preparing: new LocalizationStrings().es('Preparando el estudio…').en('Preparing the studio…'),
+	expedition: new LocalizationStrings().es('Prepara tu próxima expedición').en('Prepare your next expedition')
+}))
 
-const { Title } = Typography
+const loadingText = computed(() => {
+	const text = loading.state.text
+	return !text || text === 'Loading' ? texts.preparing : text
+})
 
 const progressStatus = computed<ProgressProps['status']>(() => {
 	if (loading.state.hasError) {
 		messages.error(loading.state.error)
-
 		return 'exception'
 	}
-	
 	if (loading.state.completedCount >= loading.state.stagesCount) {
 		return 'success'
 	}
-
 	return 'active'
 })
 </script>
 
-<style lang='scss' scoped>
-.wrapper {
-	display: grid;
+<style lang="scss" scoped>
+// Do not use "wrapper": the console menu uses display: contents on that class.
+.loading-screen {
 	position: fixed;
 	z-index: 1000;
 	inset: 0;
-	place-items: center;
-	color: white;
+	display: grid;
+	align-items: safe center;
+	justify-items: center;
+	box-sizing: border-box;
+	padding: clamp(12px, 3vw, 32px);
+	overflow: auto;
+	color: #ecf7fa;
 	background:
-		radial-gradient(circle at 50% 34%, rgba(30, 64, 175, 0.3), transparent 34%),
-		linear-gradient(145deg, #172554 0%, #0f172a 46%, #050a12 100%);
-	overflow: hidden;
+		radial-gradient(ellipse at 50% 25%, #24516c70, transparent 65%),
+		linear-gradient(145deg, #102b39, #08141e 70%);
+}
 
-	&::after {
-		position: absolute;
-		inset: 0;
-		background-image: linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
-		background-size: 32px 32px;
-		content: '';
-		mask-image: linear-gradient(to bottom, transparent, black 45%, transparent);
-	}
+.splash {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	width: min(600px, 100%);
+	min-width: 0;
+	box-sizing: border-box;
+	padding: clamp(16px, 3vw, 28px);
+	border: 1px solid #38596a;
+	border-radius: 20px;
+	background: #102635e8;
+	box-shadow: 0 20px 60px #0004;
+	animation: splash-enter .5s ease-out both;
 
-	.ambient {
-		position: absolute;
-		width: 38vw;
-		height: 38vw;
-		border-radius: 50%;
-		filter: blur(75px);
-		opacity: 0.22;
-		animation: ambient-float 6s ease-in-out infinite alternate;
-
-		&--one { top: -20%; left: -8%; background: #f97316; }
-		&--two { right: -12%; bottom: -24%; background: #2563eb; animation-delay: -3s; }
-	}
-
-	.splash {
-		position: relative;
-		z-index: 2;
-		width: min(760px, calc(100vw - 48px));
-		text-align: center;
-		animation: splash-enter 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
-	}
-
-	.logo-orbit {
-		display: grid;
-		position: relative;
-		width: 92px;
-		height: 92px;
-		margin: 0 auto 16px;
-		place-items: center;
-
-		img {
-			width: 68px;
-			height: 68px;
-			border-radius: 18px;
-			box-shadow: 0 16px 34px rgba(0, 0, 0, 0.34);
-		}
-
-		&__ring {
-			position: absolute;
-			inset: 0;
-			border: 2px solid rgba(251, 146, 60, 0.18);
-			border-top-color: #fb923c;
-			border-right-color: rgba(251, 146, 60, 0.6);
-			border-radius: 50%;
-			animation: orbit 2.4s linear infinite;
-		}
-	}
-
-	.brand {
+	&__brand {
 		display: flex;
-		justify-content: center;
-		gap: 7px;
-		font-size: 22px;
-		letter-spacing: 0.02em;
+		align-items: center;
+		gap: 12px;
+		min-width: 0;
 
-		span { font-weight: 350; color: #cbd5e1; }
-		strong { font-weight: 750; }
-	}
-	.loading-journey { margin: 22px 0; box-shadow: 0 18px 45px #0006; border: 1px solid #d9bd8733; }
-
-	.terrain {
-		position: relative;
-		height: 92px;
-		margin: 20px 0 10px;
-		overflow: hidden;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-
-		&__ridge {
-			position: absolute;
-			bottom: -47px;
-			left: -10%;
-			width: 120%;
-			height: 85px;
-			background: #1e293b;
-			border-radius: 48% 52% 0 0;
-			transform: rotate(-2deg);
-
-			&--back { bottom: -38px; background: #334155; opacity: 0.52; transform: rotate(3deg); }
-		}
-	}
-
-	.vehicle {
-		position: absolute;
-		z-index: 3;
-		left: calc(50% - 48px);
-		bottom: 27px;
-		width: 96px;
-		height: 42px;
-		animation: vehicle-drive 2.8s ease-in-out infinite;
-
-		i { position: absolute; display: block; }
-		&__cab { right: 5px; bottom: 9px; width: 34px; height: 27px; background: #f97316; border-radius: 7px 9px 3px 3px; transform: skew(-5deg); }
-		&__bed { left: 7px; bottom: 9px; width: 54px; height: 21px; background: #fb923c; border-radius: 4px 2px 3px 3px; }
-		&__wheel { bottom: 2px; width: 18px; height: 18px; background: #050a12; border: 4px solid #94a3b8; border-radius: 50%; animation: wheel-spin 0.65s linear infinite; }
-		&__wheel--one { left: 18px; }
-		&__wheel--two { right: 13px; }
-	}
-
-	.progress {
-		width: 100%;
-		margin-top: 2px;
-		:deep(.ant-progress-text) { color: #cbd5e1; }
-	}
-
-	.title {
-		width: 100%;
-		min-height: 22px;
-		margin: 0 0 12px;
-		color: #cbd5e1;
-		font-size: 13px;
-		font-weight: 450;
-		letter-spacing: 0.015em;
-	}
-
-	.activity-dots {
-		display: flex;
-		justify-content: center;
-		gap: 7px;
-
-		i {
-			width: 7px;
-			height: 7px;
-			background: #fb923c;
-			border-radius: 50%;
-			animation: dot-pulse 1s ease-in-out infinite;
-			&:nth-child(2) { animation-delay: 0.14s; }
-			&:nth-child(3) { animation-delay: 0.28s; }
-		}
+		img { width: 44px; height: 44px; flex: 0 0 auto; border-radius: 12px; }
+		div { min-width: 0; }
+		strong { display: block; font-size: clamp(17px, 2.8vw, 22px); line-height: 1.25; }
+		span { display: block; margin-top: 4px; color: #afcbd6; font-size: 12px; line-height: 1.4; }
 	}
 }
 
-@keyframes splash-enter { from { opacity: 0; transform: translateY(14px) scale(0.98); } }
-@keyframes orbit { to { transform: rotate(360deg); } }
-@keyframes vehicle-drive { 0%, 100% { transform: translate(-15px, 1px) rotate(-1deg); } 50% { transform: translate(15px, -2px) rotate(1deg); } }
-@keyframes wheel-spin { to { transform: rotate(360deg); } }
-@keyframes dot-pulse { 0%, 100% { opacity: 0.25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-4px); } }
-@keyframes ambient-float { to { transform: translate(8%, 6%) scale(1.08); } }
+.loading-journey {
+	width: 100%;
+	min-width: 0;
+	margin: 0;
+	box-sizing: border-box;
+	border: 1px solid #486778;
+	border-radius: 12px;
 
+	:deep(svg) { display: block; width: 100%; height: auto; }
+}
+
+.loading-details { min-width: 0; }
+.title { margin: 0 0 12px; color: #c6dce5; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.progress {
+	width: 100%;
+	margin: 0;
+	:deep(.ant-progress-text) { color: #d7ecef; }
+}
+.activity-dots {
+	display: flex;
+	gap: 7px;
+	min-height: 12px;
+	align-items: center;
+	i { width: 7px; height: 7px; border-radius: 50%; background: #7adbd2; animation: dot-pulse 1s ease-in-out infinite; }
+	i:nth-child(2) { animation-delay: .14s; }
+	i:nth-child(3) { animation-delay: .28s; }
+}
+
+@keyframes splash-enter { from { opacity: 0; transform: translateY(8px); } }
+@keyframes dot-pulse { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+
+@media (max-height: 480px) {
+	.splash { width: min(480px, 100%); gap: 12px; padding: 16px; }
+	.splash__brand img { width: 36px; height: 36px; }
+	.splash__brand span { font-size: 11px; }
+}
 @media (prefers-reduced-motion: reduce) {
-	.wrapper * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; }
+	.loading-screen *, .loading-screen *::before, .loading-screen *::after { animation: none !important; }
 }
 </style>

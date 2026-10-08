@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { testLoadingLayout } from './test-loading-layout.mjs'
 
 const repo = dirname(dirname(fileURLToPath(import.meta.url)))
 const exe = process.env.SNOWRUNNER_APP_EXE || join(repo, 'out', 'SnowRunner Studio-win32-x64', 'SnowRunner Studio.exe')
@@ -30,8 +31,10 @@ async function getTarget() {
 	throw new Error('La aplicación no expuso la página de prueba.')
 }
 
+let socket
+try {
 const target = await getTarget()
-const socket = new WebSocket(target.webSocketDebuggerUrl)
+socket = new WebSocket(target.webSocketDebuggerUrl)
 const waiting = new Map()
 let sequence = 0
 
@@ -65,14 +68,13 @@ await call('Runtime.enable')
 // un fotograma válido.
 for (let attempt = 0; attempt < 40; attempt++) {
 	const state = await call('Runtime.evaluate', {
-		expression: `Boolean(document.querySelector('.wrapper .splash'))`,
+		expression: `(()=>{const screen=document.querySelector('.loading-screen');if(!screen)return false;if(!document.querySelector('[data-loading-layout-clone]')){const snapshot=screen.cloneNode(true);snapshot.setAttribute('data-loading-layout-clone','');screen.parentElement.append(snapshot)}return true})()`,
 		returnByValue: true
 	})
 	if (state.result.value) break
 	await new Promise(resolve => setTimeout(resolve, 50))
 }
-const splash = await call('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
-await writeFile(join(outputDir, 'startup-animation.png'), Buffer.from(splash.data, 'base64'))
+await testLoadingLayout({ call, output: outputDir })
 
 for (let attempt = 0; attempt < 120; attempt++) {
 	const state = await call('Runtime.evaluate', {
@@ -136,8 +138,6 @@ for (const viewport of [{ width: 600, height: 520 }, { width: 960, height: 620 }
 	await writeFile(join(outputDir, `setup-${viewport.width}x${viewport.height}.png`), Buffer.from(shot.data, 'base64'))
 }
 
-socket.close()
-child.kill()
 
 if (journeyFrames.length !== 3 || new Set(journeyFrames.map(frame => frame.transform)).size !== 3 || journeyFrames.some(frame => !frame.name.includes('SnowRunner Studio'))) throw new Error(`El camión no recorre el terreno llevando el nombre: ${JSON.stringify(journeyFrames)}`)
 
@@ -149,3 +149,7 @@ for (const result of results) {
 }
 
 console.log(JSON.stringify(results, null, 2))
+} finally {
+	socket?.close()
+	if (child.exitCode === null) child.kill()
+}

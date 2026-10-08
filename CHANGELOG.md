@@ -2,12 +2,13 @@
 
 [Portada](README.md) · [Documentación](docs/README.md) · [Última descarga](https://github.com/OscarD0823/snowrunner/releases/latest)
 
-## Versión actual: 2.6.0
+## Versión actual: 2.6.1
 
-Consola de expedición con navegación reorganizada, paneles oscuros y el visor junto a los ajustes. Mantiene las bibliotecas de componentes, los valores originales y las copias de seguridad.
+Presentación y animación compactas en la cabecera, sin panel repetido dentro del catálogo. Pantalla de carga centrada y adaptable, separada de los estilos del menú. Mantiene componentes, visor lateral y copias de seguridad.
 
 ## Notas disponibles
 
+- [2.6.1](docs/releases/2.6.1.md)
 - [2.6.0](docs/releases/2.6.0.md)
 - [2.5.1](docs/releases/2.5.1.md)
 - [2.5.0](docs/releases/2.5.0.md)

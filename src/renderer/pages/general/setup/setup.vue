@@ -145,7 +145,7 @@ async function onChangeGameFolder(file?: IFile) {
 		color: white;
 		font-size: 11px;
 	}
-	.setup-journey { margin-top: 20px; box-shadow: 0 9px 22px rgba(15, 23, 42, .18); }
+	.setup-journey { max-width: 420px; margin: 16px auto 0; box-shadow: 0 9px 22px rgba(15, 23, 42, .18); }
 
 	h1 {
 		margin: 22px 0 8px;
