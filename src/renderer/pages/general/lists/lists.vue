@@ -5,7 +5,6 @@
         <h1>{{ categoryTitle }}</h1>
         <span>{{ files[SourceType.all].length }} {{ texts.resultCount }}</span>
       </div>
-      <StartupJourney loop class="library-journey" />
       <div class="library-heading__actions">
         <Tooltip :title="texts.rescanButton">
           <Button
@@ -75,7 +74,6 @@ import { Category, ListMode, SourceType } from '../enums'
 import { useListStore } from '../store/list'
 import Filters from './components/filters.vue'
 import List from './components/list/list.vue'
-import StartupJourney from '@renderer/components/startup-journey.vue'
 import { LISTS_LOCALIZATION as texts } from './localization'
 import { ItemsUtils } from './utilities/items'
 

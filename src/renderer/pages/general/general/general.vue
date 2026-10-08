@@ -1,11 +1,13 @@
 <template>
+  <ConfigProvider :theme="consoleTheme">
+  <div id="studio-console" class="studio-shell" :class="{ 'studio-shell--editing': page === Page.editor, 'studio-shell--setup': page === Page.setup }">
   <loadingPage />
 	
   <template v-if="!loading.state.isLoading">
     <Menu v-if="page !== Page.setup" />
     <EditorActions />
     <GameUpdate v-model="gameUpdateOpened" />
-		
+    <main class="studio-body">
     <Setup v-if="page === Page.setup" />
     <Lists
       v-else-if="page === Page.lists || page !== Page.none"
@@ -18,7 +20,10 @@
       :category="componentCategory"
     />
     <Editor v-else-if="page === Page.editor" :key="selectedFile?.path" :file="selectedFile" />
+    </main>
   </template>
+  </div>
+  </ConfigProvider>
 </template>
 
 <script lang='ts' setup>
@@ -32,6 +37,7 @@ import { di } from '@utilities/di/container'
 import { CONFIG_TOKEN, DIRS_TOKEN, DLC_TOKEN, EDITED_TOKEN, FILES_TOKEN, LOADING_TOKEN, SYSTEM_TOKEN, WINDOWS_TOKEN } from '@utilities/di/renderer/tokens'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { ConfigProvider, theme } from 'ant-design-vue'
 import { Editor } from '../editor'
 import ComponentEditor from '../editor/component-editor.vue'
 import { Lists } from '../lists'
@@ -44,6 +50,10 @@ import GameUpdate from './game-update.vue'
 import { GENERAL_LOCALIZATION as texts } from './localization'
 
 const loading = di.resolve(LOADING_TOKEN)
+const consoleTheme = {
+  algorithm: theme.darkAlgorithm,
+  token: { colorPrimary: '#7adbd2', colorBgBase: '#0b1924', colorTextBase: '#ecf5f7', colorBorder: '#385364', borderRadius: 9, fontFamily: 'Segoe UI Variable, Segoe UI, sans-serif' }
+}
 const config = di.resolve(CONFIG_TOKEN)
 const dirs = di.resolve(DIRS_TOKEN)
 const files = di.resolve(FILES_TOKEN)

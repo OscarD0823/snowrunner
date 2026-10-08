@@ -1,5 +1,6 @@
 import { createPinia } from 'pinia'
 import { createApp } from 'vue'
+import '../../console-theme.scss'
 
 await prepareApp()
 await runApp()

@@ -51,6 +51,8 @@
           type="button"
           class="workspace-navigation__item"
           :class="{ 'workspace-navigation__item--active': item.active }"
+          :title="item.label"
+          :aria-current="item.active ? 'page' : undefined"
           @click="item.onClick"
         >
           <component :is="item.icon" />
