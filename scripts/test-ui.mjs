@@ -92,6 +92,8 @@ const evaluate = async expression => {
   if(result.exceptionDetails)throw new Error(result.exceptionDetails.exception?.description ?? result.exceptionDetails.text)
   return result.result.value
 }
+// Reproduce Windows hosts that enter the test with animations disabled.
+await call('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]})
 await testJourney({evaluate,call,output:outputDir,selector:'.setup-journey'})
 const journeyFrames = []
 for (const time of [0, 4300, 9000]) {

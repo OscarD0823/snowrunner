@@ -2,13 +2,14 @@
 
 [Portada](README.md) · [Documentación](docs/README.md) · [Última descarga](https://github.com/OscarD0823/snowrunner/releases/latest)
 
-## Versión actual: 2.6.4
+## Versión actual: 2.6.5
 
 Animación de expedición renovada: camión azul y naranja con emblema en la carrocería, materiales con volumen y efectos de nieve, roca y barro según el terreno. Conserva las actualizaciones voluntarias.
 
 ## Notas disponibles
 
-- [2.6.4](docs/releases/2.6.4.md)
+- [2.6.5](docs/releases/2.6.5.md)
+- [2.6.4](docs/releases/2.6.4.md) — preparación sin instalador en GitHub.
 - [2.6.3](docs/releases/2.6.3.md)
 - [2.6.2](docs/releases/2.6.2.md)
 - [2.6.1](docs/releases/2.6.1.md)

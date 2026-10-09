@@ -3,6 +3,8 @@ import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 export async function testJourney({ evaluate, call, output, selector = '.workspace-journey' }) {
+  // Windows runners may default to reduced motion; exercise both modes explicitly.
+  await call('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]})
   const originalStyle = await evaluate(`document.querySelector('${selector}').getAttribute('style')`)
   const duration = await evaluate(`document.querySelector('${selector} .journey-convoy').getAnimations()[0].effect.getComputedTiming().duration`)
   assert.equal(duration,selector === '.workspace-journey' ? 12000 : 9000)
@@ -36,7 +38,7 @@ export async function testJourney({ evaluate, call, output, selector = '.workspa
     await writeFile(join(output,'journey-results.json'),JSON.stringify({detailing,frames,trajectory,reduced},null,2))
     return frames
   } finally {
-    await call('Emulation.setEmulatedMedia',{features:[]})
+    await call('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]})
     await evaluate(`(()=>{const n=document.querySelector('${selector}');${originalStyle===null?'n.removeAttribute("style")':`n.setAttribute('style',${JSON.stringify(originalStyle)})`};n.querySelector('svg').getAnimations({subtree:true}).forEach(a=>a.play())})()`)
     await call('Emulation.setDeviceMetricsOverride',{width:1366,height:768,deviceScaleFactor:1,mobile:false})
   }
