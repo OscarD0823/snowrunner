@@ -1,7 +1,7 @@
 {
 	"name": "snowrunner-studio-es",
 	"productName": "SnowRunner Studio",
-	"version": "2.6.2",
+	"version": "2.6.3",
 	"description": "Editor visual multilingüe para vehículos, remolques y componentes de SnowRunner.",
 	"type": "module",
 	"repository": {
@@ -10,6 +10,8 @@
 	},
 	"main": ".vite/build/index.js",
 	"scripts": {
+		"icons:generate": "electron scripts/generate-icon.cjs",
+		"test:icons": "electron scripts/generate-icon.cjs --check",
 		"package": "electron-forge package --platform=win32 --arch=x64",
 		"build:exe": "cross-env NODE_ENV=production electron-forge make --platform=win32 --arch=x64",
 		"make": "cross-env NODE_ENV=production electron-forge make --platform=win32 --arch=x64",

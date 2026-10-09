@@ -111,7 +111,7 @@ const paths = di.resolve(PATHS_TOKEN)
 const app = di.resolve(APP_TOKEN)
 const backup = di.resolve(BACKUP_TOKEN)
 const archiver = di.resolve(ARCHIVER_TOKEN)
-const appIconUrl = new URL('../../../images/app-icon.svg', import.meta.url).href
+const appIconUrl = new URL('../../../images/app-icon.png', import.meta.url).href
 
 const settingsHasBeenOpened = ref(false)
 const settingsIsOpen = ref(false)
@@ -423,14 +423,14 @@ function openWhatsNew() {
 .brand-mark {
 	width: 42px;
 	height: 42px;
-	border-radius: 12px;
-	overflow: hidden;
-	box-shadow: 0 8px 22px rgba(234, 88, 12, 0.22);
+	flex: 0 0 auto;
+	filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.3));
 
 	img {
 		display: block;
 		width: 100%;
 		height: 100%;
+		object-fit: contain;
 	}
 }
 

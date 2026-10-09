@@ -30,8 +30,14 @@ jobs:
       - name: Validar actualizaciones opcionales
         run: npm run test:updates
 
+      - name: Validar iconos de vehículos
+        run: npm run test:icons
+
       - name: Crear instalador
         run: npm run make
+
+      - name: Validar iconos incrustados y recurso de ventana
+        run: node scripts/test-packaged-icons.mjs
 
       - name: Publicar archivos de actualización
         uses: softprops/action-gh-release@v3

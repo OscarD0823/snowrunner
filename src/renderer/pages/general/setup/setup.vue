@@ -70,7 +70,7 @@ import InitialSelect from './initial-select.vue'
 import { SETUP_LOCALIZATION as texts } from './localization.js'
 
 const step = ref(0)
-const appIcon = new URL('../../../../images/app-icon.svg', import.meta.url).href
+const appIcon = new URL('../../../../images/app-icon.png', import.meta.url).href
 
 async function onChangeGameFolder(file?: IFile) {
 	if (!file) {
@@ -136,14 +136,11 @@ async function onChangeGameFolder(file?: IFile) {
 	}
 
 	&-mark {
-		display: grid;
-		place-items: center;
+		display: block;
 		width: 32px;
 		height: 32px;
-		border-radius: 9px;
-		background: #ea580c;
-		color: white;
-		font-size: 11px;
+		object-fit: contain;
+		flex: 0 0 auto;
 	}
 	.setup-journey { max-width: 420px; margin: 16px auto 0; box-shadow: 0 9px 22px rgba(15, 23, 42, .18); }
 

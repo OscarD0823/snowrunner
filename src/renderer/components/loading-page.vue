@@ -46,7 +46,7 @@ import StartupJourney from './startup-journey.vue'
 
 const loading = di.resolve(LOADING_TOKEN)
 const messages = di.resolve(MESSAGES_TOKEN)
-const appIcon = new URL('../../images/app-icon.svg', import.meta.url).href
+const appIcon = new URL('../../images/app-icon.png', import.meta.url).href
 const texts = loadLocalization(new Localization({
 	preparing: new LocalizationStrings().es('Preparando el estudio…').en('Preparing the studio…'),
 	expedition: new LocalizationStrings().es('Prepara tu próxima expedición').en('Prepare your next expedition')
@@ -108,7 +108,7 @@ const progressStatus = computed<ProgressProps['status']>(() => {
 		gap: 12px;
 		min-width: 0;
 
-		img { width: 44px; height: 44px; flex: 0 0 auto; border-radius: 12px; }
+		img { width: 44px; height: 44px; flex: 0 0 auto; object-fit: contain; }
 		div { min-width: 0; }
 		strong { display: block; font-size: clamp(17px, 2.8vw, 22px); line-height: 1.25; }
 		span { display: block; margin-top: 4px; color: #afcbd6; font-size: 12px; line-height: 1.4; }

@@ -76,7 +76,7 @@
 import { useId } from 'vue'
 defineProps<{ loop?: boolean }>()
 const id = useId().replace(/:/g, '')
-const appIcon = new URL('../../images/app-icon.svg', import.meta.url).href
+const appIcon = new URL('../../images/app-icon.png', import.meta.url).href
 </script>
 
 <style scoped>
