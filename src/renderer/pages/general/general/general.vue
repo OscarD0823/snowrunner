@@ -38,6 +38,7 @@ import { CONFIG_TOKEN, DIRS_TOKEN, DLC_TOKEN, EDITED_TOKEN, FILES_TOKEN, LOADING
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { ConfigProvider, theme } from 'ant-design-vue'
+import { useDecorativeVisibility } from '@renderer/utilities/use-decorative-visibility'
 import { Editor } from '../editor'
 import ComponentEditor from '../editor/component-editor.vue'
 import { Lists } from '../lists'
@@ -52,7 +53,7 @@ import { GENERAL_LOCALIZATION as texts } from './localization'
 const loading = di.resolve(LOADING_TOKEN)
 const consoleTheme = {
   algorithm: theme.darkAlgorithm,
-  token: { colorPrimary: '#7adbd2', colorBgBase: '#0b1924', colorTextBase: '#ecf5f7', colorBorder: '#385364', borderRadius: 9, fontFamily: 'Segoe UI Variable, Segoe UI, sans-serif' }
+  token: { colorPrimary: '#95dce4', colorBgBase: '#0b1924', colorTextBase: '#ecf5f7', colorBorder: '#496674', borderRadius: 6, fontFamily: 'Segoe UI Variable, Segoe UI, sans-serif' }
 }
 const config = di.resolve(CONFIG_TOKEN)
 const dirs = di.resolve(DIRS_TOKEN)
@@ -68,6 +69,7 @@ const { componentCategory, file: selectedFile } = storeToRefs(editorStore)
 const gameUpdateOpened = ref(false)
 
 useWindowReady(ProgramWindow.general)
+useDecorativeVisibility()
 useGameUpdate()
 useMainRouting()
 

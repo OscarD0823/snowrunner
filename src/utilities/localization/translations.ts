@@ -4,6 +4,7 @@
  * específica usan inglés como respaldo para no mostrar cadenas vacías.
  */
 const COMMON_TRANSLATIONS: Record<string, Partial<Record<string, string>>> = {
+	'Current value': { FR: 'Valeur actuelle', IT: 'Valore attuale', CS: 'Aktuální hodnota', JA: '現在の値', KO: '현재 값', PL: 'Bieżąca wartość', 'PT-BR': 'Valor atual', 'ZH-TW': '目前值' },
 	'File': { FR: 'Fichier', IT: 'File', CS: 'Soubor', JA: 'ファイル', KO: '파일', PL: 'Plik', 'PT-BR': 'Arquivo', 'ZH-TW': '檔案' },
 	'Backup': { FR: 'Sauvegarde', IT: 'Backup', CS: 'Záloha', JA: 'バックアップ', KO: '백업', PL: 'Kopia zapasowa', 'PT-BR': 'Backup', 'ZH-TW': '備份' },
 	'Settings': { FR: 'Paramètres', IT: 'Impostazioni', CS: 'Nastavení', JA: '設定', KO: '설정', PL: 'Ustawienia', 'PT-BR': 'Configurações', 'ZH-TW': '設定' },

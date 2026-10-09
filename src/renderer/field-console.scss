@@ -1,0 +1,64 @@
+// A field instrument, not a copy of Caja Fantasma's vault. Static material layers
+// provide depth without textures, network fonts or continuously moving UI chrome.
+#studio-console {
+  --field-accent: #95dce4;
+  --field-edge: #496674;
+  --field-plate: linear-gradient(150deg, #1b3442, #102430 70%);
+  --field-relief: inset 0 1px #d0ecf014, inset 0 -1px #0005, 0 5px 16px #0002;
+  --field-radius: 5px 13px 5px 13px;
+
+  .topbar { background: linear-gradient(180deg, #132530, #08151f); border-bottom: 1px solid #47616d; box-shadow: 0 2px 8px #0003; }
+  .workspace-bar { background: linear-gradient(110deg, #152a35, #0a1923 80%); }
+  .workspace-navigation__item { border: 1px solid transparent; border-radius: var(--field-radius); transition: background .16s, border-color .16s, color .16s; }
+  .workspace-navigation__item > .anticon { display: grid; place-items: center; width: 28px; height: 28px; flex: none; border: 1px solid #55738260; border-radius: 4px 8px 4px 8px; background: #091b25; color: #b8d3df; }
+  .workspace-navigation__item--active { color: #c2f1f5; border-color: #658b955c; background: linear-gradient(100deg, #26515c, #163441 75%); box-shadow: inset 3px 0 var(--field-accent), var(--field-relief); }
+  .workspace-navigation__item--active > .anticon { color: var(--field-accent); border-color: #7fb4bc; }
+  .workspace-navigation__item:focus-visible { outline: 2px solid var(--field-accent); outline-offset: -2px; }
+  .installation-path { border-radius: var(--field-radius); box-shadow: inset 0 1px #def6ff0c; }
+  .library-heading { background: linear-gradient(110deg, #183340, #0e2330 65%); }
+  .library-heading__title span { padding: 4px 8px; border: 1px solid #557280; border-radius: 4px; background: #0a1d27; font-size: 11px; font-variant-numeric: tabular-nums; }
+  .quick-sections, .filters { background: #0d202b; }
+  .ant-btn:not(.ant-btn-text):not(.ant-btn-link), .topbar .icon-button, .language-control { border-radius: var(--field-radius); box-shadow: var(--field-relief); }
+  .ant-btn-primary { color: #e2fbfd; border-color: #639caa; background: linear-gradient(150deg, #306879, #1a4658); text-shadow: 0 1px #0005; }
+  .ant-btn-primary:not(:disabled):hover { color: #fff; border-color: var(--field-accent); background: linear-gradient(150deg, #3d7f8e, #255c70); }
+  .ant-btn:not(:disabled):active { box-shadow: inset 0 2px 5px #0006; }
+  .ant-input-affix-wrapper, .ant-select-selector, .ant-input-number { box-shadow: inset 0 2px 5px #0003; }
+  .ant-segmented { padding: 4px; background: #091c26; border: 1px solid #344e5b; border-radius: 5px 10px 5px 10px; }
+  .ant-segmented-item { min-height: 30px; }
+  .ant-segmented-item-selected { color: #c1f1f4; background: linear-gradient(145deg, #2b505d, #183543); box-shadow: inset 0 1px #b8eef02b, inset 0 -2px var(--field-accent), 0 2px 4px #0003; }
+  .card-container .card, .component-card, .card-container .row { border-color: var(--field-edge); border-radius: var(--field-radius); background: var(--field-plate); box-shadow: var(--field-relief); }
+  .card-container .card:hover, .component-card:hover { border-color: var(--field-accent); box-shadow: inset 0 1px #d0ecf030, 0 6px 18px #0004; }
+  .card .ant-card-cover { border-bottom: 1px solid #456574; background: radial-gradient(ellipse at 50% 75%, #537a8052, transparent 70%), linear-gradient(145deg, #243f4e, #132c3b); }
+  .card .ant-card-meta-title { font-weight: 650; }
+  .card-meta { letter-spacing: .035em; font-size: 10px; }
+  .container .editor-workspace > .table, .vehicle-preview, .component-editor__intro, .setup-card { border-radius: var(--field-radius); border-color: var(--field-edge); background: var(--field-plate); box-shadow: var(--field-relief); }
+  .vehicle-preview__summary { padding: 4px 2px 10px; border-bottom: 1px solid #486676; }
+  .editor-section-select { background: #0d202b; border-color: #476774; border-radius: var(--field-radius); }
+  .table .ant-collapse-header { background: linear-gradient(100deg, #244352, #112b39); box-shadow: inset 3px 0 #749da9; }
+  .table .ant-collapse-header-text { font-weight: 650; letter-spacing: .02em; }
+  .table .parameter { padding: 12px; border: 1px solid #3c5868; border-radius: var(--field-radius); background: linear-gradient(140deg, #16313f, #0e2533); align-items: flex-start; }
+  .table .parameter .label { padding-left: 0; }
+  .table .parameter .label .ant-typography { color: #e2f2f6; font-weight: 650; }
+  .table .parameter-help { color: #b3c9d2; font-weight: 400; }
+  .table .parameter[data-value-state='changed'] { border-inline-start: 3px solid #e8bd7b; }
+  .table .parameter .current-value-label { flex-basis: 100%; color: #b6ced8; font-size: 11px; text-align: start; }
+  .table .value-guide { border-radius: 4px 9px 4px 9px; padding: 10px; background: #091c27; box-shadow: inset 0 2px 5px #0003; align-items: stretch; }
+  .table .original-value { justify-content: space-between; text-align: start; font-size: 11px; }
+  .table .original-value strong { color: #e5f2f7; font-variant-numeric: tabular-nums; }
+  .table .recommendations { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; width: 100%; }
+  .table .recommendations-title { grid-column: 1 / -1; color: #a9d7d2; text-align: start; font-size: 11px; }
+  .table .recommendations .ant-btn { display: flex; flex-direction: column; height: auto; min-height: 44px; padding: 6px 3px; gap: 2px; background: linear-gradient(160deg, #203e49, #112b37); color: #c5dbe0; border-color: #476570; border-radius: 4px 8px 4px 8px; white-space: normal; overflow-wrap: anywhere; }
+  .table .recommendations .ant-btn span { font-size: 10px; }
+  .table .recommendations .ant-btn strong { font-size: 12px; font-variant-numeric: tabular-nums; }
+  .table .recommendations .ant-btn[aria-pressed='true'] { color: #ddfbf9; background: #22534e; border-color: #8cd6c8; box-shadow: inset 0 -2px #8cd6c8; }
+  .setup .language-option { border-radius: var(--field-radius); box-shadow: var(--field-relief); }
+  .setup .language-option--active { background: linear-gradient(145deg, #326477, #1c4052); border-color: var(--field-accent); }
+  .ant-btn:disabled { box-shadow: none; }
+}
+html[data-app-hidden='true'] .startup-journey,
+html[data-app-hidden='true'] .startup-journey * { animation-play-state: paused !important; }
+
+@media (max-width: 760px) {
+  #studio-console .workspace-navigation__item > .anticon { width: 22px; height: 22px; }
+  #studio-console .library-heading__title span { border: 0; padding: 0; background: transparent; }
+}

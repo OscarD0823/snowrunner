@@ -2,6 +2,7 @@
   <div
     ref="contextTarget"
     class="grid parameter"
+    :data-value-state="originalValue !== undefined && Number(value) !== originalValue ? 'changed' : 'original'"
   >
     <ContextMenu
       :items="contextItems"
@@ -23,6 +24,7 @@
       v-if="isActive"
       class="content"
     >
+      <span v-if="originalValue !== undefined" class="current-value-label">{{ texts.currentValue }}</span>
       <slot
         :value="value"
         :on-change="changeValue"
@@ -45,9 +47,11 @@
             :key="recommendation.level"
             size="small"
             :title="texts.safeRecommendationHint"
+            :aria-pressed="Number(value) === recommendation.value"
             @click="changeValue(recommendation.value)"
           >
-            {{ recommendationLabel(recommendation.level) }} · {{ recommendation.value }}
+            <span>{{ recommendationLabel(recommendation.level) }}</span>
+            <strong>{{ recommendation.value }}</strong>
           </Button>
         </div>
       </div>

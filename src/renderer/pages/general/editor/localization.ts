@@ -150,6 +150,10 @@ export const EDITOR_LOCALIZATION = loadLocalization(new Localization({
 		.es('Archivos')
 		.en('Files'),
 
+	currentValue: new LocalizationStrings()
+		.es('Valor actual').en('Current value').ru('Текущее значение').de('Aktueller Wert')
+		.ch('当前值'),
+
 	originalValue: new LocalizationStrings()
 		.es('Valor original:')
 		.en('Original value:'),
