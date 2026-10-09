@@ -61,4 +61,4 @@ El instalador y sus archivos de actualización se generan en `out/make/squirrel.
 
 Para publicar: actualiza la versión de `package.json`, `package-lock.json` y `docs/version-info.json`; añade `docs/releases/X.Y.Z.md` y su entrada en [CHANGELOG.md](../CHANGELOG.md), y ejecuta las comprobaciones. Crea y sube el tag `vX.Y.Z`; el flujo de publicación construye y adjunta Setup.exe, el paquete .nupkg y RELEASES. No reutilices tags publicados.
 
-Las instalaciones consultan GitHub Releases al abrirse y cada 30 minutos. `docs/version-info.json` es metadato documental, no la fuente del actualizador. Ordenar documentación no requiere cambiar la versión ni generar un instalador nuevo.
+Las actualizaciones son manuales: `src/manual-updates.ts` consulta GitHub Releases solo desde la acción del usuario y valida versiones estables y el instalador del repositorio propio. No usa autoUpdater ni ejecuta instaladores; el enlace se abre en el navegador. Ejecuta `npm run test:updates` y las pruebas visuales del panel al cambiar este flujo. `docs/version-info.json` es metadato documental, no la fuente del actualizador.

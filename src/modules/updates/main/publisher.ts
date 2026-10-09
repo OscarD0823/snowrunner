@@ -10,5 +10,7 @@ export function publishUpdates() {
 	const getInstance = () => instance ??= di.resolve(UPDATES_TOKEN)
 	const className = 'Updates'
 
-	publishInstanceFunction(className, 'updateApp', getInstance)
+	publishInstanceFunction(className, 'checkUpdates', getInstance)
+	publishInstanceFunction(className, 'openUpdateDownload', getInstance)
+	publishInstanceFunction(className, 'openUpdateRelease', getInstance)
 }

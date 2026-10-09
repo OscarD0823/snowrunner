@@ -21,6 +21,9 @@
       </div>
       <GameBrief />
       <div class="topbar__actions">
+        <Tooltip :title="updateTexts.updatesTitle">
+          <Button class="topbar-button" type="text" :aria-label="updateTexts.updatesTitle" data-update-open @click="updatesIsOpen = true"><SyncOutlined /></Button>
+        </Tooltip>
         <Language compact />
         <Tooltip :title="texts.settingsMenuLabel">
           <Button
@@ -73,16 +76,20 @@
     <Settings
       v-if="settingsHasBeenOpened"
       v-model="settingsIsOpen"
+      @updates="settingsIsOpen = false; updatesIsOpen = true"
     />
     <WhatsNew
       v-if="whatsNewHasBeenOpened"
       v-model="whatsNewIsOpen"
     />
+    <Update v-model:open="updatesIsOpen" />
   </div>
 </template>
 
 <script lang='ts' setup>
 import GameBrief from '@renderer/components/game-brief.vue'
+import Update from '@renderer/pages/general/update/update.vue'
+import { UPDATE_LOCALIZATION as updateTexts } from '@renderer/pages/general/update/localization'
 import { AppstoreAddOutlined, CarOutlined, CloudDownloadOutlined, ContainerOutlined, DashboardOutlined, DatabaseOutlined, EditOutlined, FileOutlined, FolderOpenOutlined, GithubOutlined, InfoCircleOutlined, LinkOutlined, LogoutOutlined, QuestionCircleOutlined, RollbackOutlined, SaveOutlined, SettingOutlined, SyncOutlined, ThunderboltOutlined } from '@ant-design/icons-vue'
 import { Page } from '@modules/windows/enums'
 import { Category, SourceType } from '@renderer/pages/general/enums'
@@ -108,6 +115,7 @@ const appIconUrl = new URL('../../../images/app-icon.svg', import.meta.url).href
 
 const settingsHasBeenOpened = ref(false)
 const settingsIsOpen = ref(false)
+const updatesIsOpen = ref(false)
 
 const whatsNewHasBeenOpened = ref(false)
 const whatsNewIsOpen = ref(false)
@@ -295,6 +303,12 @@ const items = computed(() => [
 				label: texts.versionMenuItemLabel,
 				icon: h(InfoCircleOutlined),
 				onClick: () => openWhatsNew()
+			},
+			{
+				key: 'manual_updates',
+				label: updateTexts.updatesTitle,
+				icon: h(SyncOutlined),
+				onClick: () => updatesIsOpen.value = true
 			},
 			{
 				key: 'releases',

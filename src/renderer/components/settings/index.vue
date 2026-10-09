@@ -18,10 +18,10 @@
           v-model="advanced"
           :label="texts.advancedModeLabel"
         />
-        <BoolSetting
-          v-model="updates"
-          :label="texts.updatesLabel"
-        />
+      </section>
+      <section class="settings-section">
+        <Button data-update-settings @click="emit('updates')">{{ updateTexts.updatesTitle }}</Button>
+        <p>{{ updateTexts.updatesOptional }}</p>
       </section>
     </div>
 
@@ -45,15 +45,15 @@ import { Button, Modal } from 'ant-design-vue'
 import { ref, watch } from 'vue'
 import BoolSetting from './bool-setting.vue'
 import { SETTINGS_LOCALIZATION as texts } from './localization.js'
+import { UPDATE_LOCALIZATION as updateTexts } from '@renderer/pages/general/update/localization'
 
 const config = di.resolve(CONFIG_TOKEN)
 const mods = ref(config.useMods)
 const advanced = ref(config.advancedMode)
-const updates = ref(config.checkUpdates)
+const emit = defineEmits<{ updates: [] }>()
 
 watch(mods, () => config.useMods = mods.value)
 watch(advanced, () => config.advancedMode = advanced.value)
-watch(updates, () => config.checkUpdates = updates.value)
 
 /** Открыты ли настройки. */
 const isOpen = defineModel<boolean>({ required: true })

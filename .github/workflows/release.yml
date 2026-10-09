@@ -27,6 +27,9 @@ jobs:
       - name: Verificar tipos
         run: npm run check
 
+      - name: Validar actualizaciones opcionales
+        run: npm run test:updates
+
       - name: Crear instalador
         run: npm run make
 

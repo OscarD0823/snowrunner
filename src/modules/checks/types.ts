@@ -1,9 +1,3 @@
-/** Публичный файл для обновления. */
-export interface IPubFile {
-	/** Etiqueta de la última publicación en GitHub. */
-	tag_name: string
-}
-
 /** Разного рода проверки. [main] */
 export interface IMainChecks extends IPublicChecks {
 	/**
@@ -30,11 +24,5 @@ export interface IPublicChecks {
 	 */
 	checkInitialChanges(): Promise<void>
 
-	/**
-	 * Проверить наличие обновления.
-	 * Выводит оповещение при наличии.
-	 * @param whateverCheck Игнорировать настройку `updates` в `Config`.
-	 */
-	checkUpdate(whateverCheck?: boolean): Promise<string | undefined>
 }
 

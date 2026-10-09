@@ -1,15 +1,12 @@
 import { loadLocalization } from '@localization/main'
 import type { IMainDialogs } from '@modules/dialogs/types'
-import { ErrorText } from '@modules/errors/enums'
 import { ProgramError } from '@modules/errors/main'
 import type { IDirs, IFiles } from '@modules/files/main'
 import { di, inject } from '@utilities/di/container'
-import { ARCHIVER_TOKEN, BACKUP_TOKEN, CONFIG_TOKEN, DIALOGS_TOKEN, DIRS_TOKEN, FILES_TOKEN, PATHS_TOKEN, SIZES_TOKEN } from '@utilities/di/main/tokens'
+import { ARCHIVER_TOKEN, BACKUP_TOKEN, DIALOGS_TOKEN, DIRS_TOKEN, FILES_TOKEN, SIZES_TOKEN } from '@utilities/di/main/tokens'
 import { app } from 'electron'
-import dns from 'node:dns'
-import { get } from 'node:https'
 import { CHECKS_LOCALIZATION } from '../localization'
-import type { IMainChecks, IPubFile } from '../types'
+import type { IMainChecks } from '../types'
 
 /** Разного рода проверки. [main] */
 export class Checks implements IMainChecks {
@@ -30,9 +27,6 @@ export class Checks implements IMainChecks {
 
 	/** Папка с xml файлами из initial.pak. */
 	private readonly MEDIA_FOLDER = '[media]'
-
-	/** Url сайта GitHub. */
-	private readonly GITHUB_URL = 'github.com'
 
 	async hasAdminPrivileges(): Promise<boolean> {
 		try {
@@ -97,67 +91,6 @@ export class Checks implements IMainChecks {
 		const archiver = di.resolve(ARCHIVER_TOKEN)
 
 		await archiver.unpackMain(false)
-	}
-
-	async checkUpdate(whateverCheck?: boolean): Promise<string | undefined> {
-		if (process.windowsStore) {
-			return
-		}
-
-		const config = di.resolve(CONFIG_TOKEN)
-		const { promise, resolve, reject } = Promise.withResolvers<string | undefined>()
-
-		if (!config.checkUpdates && !whateverCheck) {
-			return
-		}
-
-		dns.resolve(this.GITHUB_URL, error => {
-			if (error) {
-				return reject(new ProgramError(ErrorText.gitHubConnectError, error))
-			}
-
-			const paths = di.resolve(PATHS_TOKEN)
-
-			get(paths.publicInfo, {
-				headers: {
-					Accept: 'application/vnd.github+json',
-					'User-Agent': 'SnowRunner-Studio'
-				}
-			}, response => {
-				let rawData = ''
-
-				response
-					.setEncoding('utf8')
-					.on('data', chunk => rawData += chunk)
-					.on('end', async () => {
-						const data: IPubFile = JSON.parse(rawData)
-						const version = config.version
-						const latestVersion = data.tag_name.replace(/^v/i, '')
-
-						resolve(this.isNewerVersion(latestVersion, version)
-							? latestVersion
-							: undefined
-						)
-					})
-			}).on('error', error => {
-				reject(new ProgramError(ErrorText.gitHubConnectError, error))
-			})
-		})
-
-		return promise
-	}
-
-	private isNewerVersion(candidate: string, current: string) {
-		const candidateParts = candidate.split('-')[0].split('.').map(part => Number.parseInt(part, 10) || 0)
-		const currentParts = current.split('-')[0].split('.').map(part => Number.parseInt(part, 10) || 0)
-		const length = Math.max(candidateParts.length, currentParts.length)
-
-		for (let index = 0; index < length; index++) {
-			const difference = (candidateParts[index] ?? 0) - (currentParts[index] ?? 0)
-			if (difference !== 0) return difference > 0
-		}
-
-		return current.includes('-') && !candidate.includes('-')
 	}
 
 	/**

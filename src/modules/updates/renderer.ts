@@ -6,5 +6,11 @@ import type { IRendererUpdates } from './types'
 @initMain()
 export class Updates implements IRendererUpdates {
 	@mainMethod()
-	updateApp!: UpdatesMain['updateApp']
+	checkUpdates!: UpdatesMain['checkUpdates']
+
+	@mainMethod()
+	openUpdateDownload!: UpdatesMain['openUpdateDownload']
+
+	@mainMethod()
+	openUpdateRelease!: UpdatesMain['openUpdateRelease']
 }

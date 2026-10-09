@@ -37,7 +37,7 @@ export class Config implements IMainConfigManager {
 		advancedMode: false,
 		useMods: true,
 		openWhatsNew: true,
-		checkUpdates: true,
+		checkUpdates: false,
 		optimizeUnpack: false,
 		customImages: {}
 	}
@@ -150,11 +150,7 @@ export class Config implements IMainConfigManager {
 			...this.default,
 			...data,
 			version: this.default.version,
-			initialPath: data.initialPath ?? null,
-			// Las versiones anteriores no disponían de un actualizador funcional.
-			// Lo activamos una sola vez durante la migración; después la elección
-			// del usuario se conserva normalmente en la misma versión.
-			checkUpdates: true
+			initialPath: data.initialPath ?? null
 		}
 	}
 

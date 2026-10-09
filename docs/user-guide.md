@@ -45,7 +45,9 @@ Una actualización del juego puede reemplazar archivos o cambiar formatos: vuelv
 
 ## Actualizaciones y soporte
 
-La distribución es exclusiva de GitHub. El programa consulta las publicaciones al abrirse y cada 30 minutos; el instalador no distribuye modelos, texturas ni carátulas del juego.
+La distribución es exclusiva de GitHub. Abre **Actualizaciones** con el botón ↻ de la cabecera (también desde Ajustes o Ayuda) y pulsa **Buscar actualizaciones** cuando quieras. No se consulta GitHub ni se descarga nada automáticamente.
+
+Si hay una versión estable nueva, puedes **Descargar instalador**, leer la versión en GitHub o **Seguir con esta versión**. La descarga abre el navegador: no ejecuta el instalador ni cierra el editor. Guarda tus cambios y cierra el editor antes de ejecutar el instalador descargado. El instalador no distribuye modelos, texturas ni carátulas del juego.
 
 Para informar de un problema, usa las [incidencias del repositorio](https://github.com/OscarD0823/snowrunner/issues). Indica la versión del programa, el vehículo o componente y el mensaje de error. No publiques partidas, datos personales ni paquetes completos del juego.
 

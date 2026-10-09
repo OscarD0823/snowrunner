@@ -12,5 +12,4 @@ export function publishChecks() {
 
 	publishInstanceFunction(className, 'hasAdminPrivileges', getInstance)
 	publishInstanceFunction(className, 'checkInitialChanges', getInstance)
-	publishInstanceFunction(className, 'checkUpdate', getInstance)
 }

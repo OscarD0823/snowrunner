@@ -8,9 +8,6 @@ export type * from './types'
 @initMain()
 export class Checks implements IRendererChecks {
 	@mainMethod()
-	checkUpdate!: ChecksMain['checkUpdate']
-
-	@mainMethod()
 	hasAdminPrivileges!: ChecksMain['hasAdminPrivileges']
 
 	@mainMethod()
