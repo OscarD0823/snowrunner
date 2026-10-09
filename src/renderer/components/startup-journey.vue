@@ -5,10 +5,9 @@
         <linearGradient :id="`${id}-sky`" x2="0" y2="1">
           <stop stop-color="#101f2d" /><stop offset=".7" stop-color="#33525e" /><stop offset="1" stop-color="#d29b68" />
         </linearGradient>
-        <linearGradient :id="`${id}-paint`" x2="0" y2="1">
-          <stop stop-color="#ffc778" /><stop offset=".5" stop-color="#d56b29" /><stop offset="1" stop-color="#86452b" />
-        </linearGradient>
-        <linearGradient :id="`${id}-beam`"><stop stop-color="#fff3cd" stop-opacity=".4" /><stop offset="1" stop-color="#fff3cd" stop-opacity="0" /></linearGradient>
+        <linearGradient :id="`${id}-snow-ground`" x2="0" y2="1"><stop stop-color="#e8eeea"/><stop offset="1" stop-color="#839ba0"/></linearGradient>
+        <linearGradient :id="`${id}-wet-ground`" x2="0" y2="1"><stop stop-color="#99aaa2"/><stop offset=".2" stop-color="#6b6050"/><stop offset="1" stop-color="#352c25"/></linearGradient>
+        <pattern :id="`${id}-grain`" width="43" height="19" patternUnits="userSpaceOnUse"><path d="m2 3 5 1m13 8 8-1m9-7 3 1M4 16h3" stroke="#1b2a28" stroke-width=".8" opacity=".25"/><circle cx="15" cy="3" r=".6" fill="#dce2d1" opacity=".4"/></pattern>
       </defs>
       <rect width="900" height="240" rx="18" :fill="`url(#${id}-sky)`" />
       <circle class="journey-sun" cx="696" cy="85" r="34" fill="#f2bc80" opacity=".32" />
@@ -22,12 +21,17 @@
       </g>
       <!-- Tres terrenos reconocibles, con relieve y huellas propias. -->
       <path d="M0 183q81-33 168-9t121-5q68-50 134-13t116 20q90 35 169 4t192-10V240H0Z" fill="#283e3d" />
-      <path d="M0 197q89-36 182-7t122-18l-31 47H0Z" fill="#c4d1d2" />
+      <path d="M0 197q89-36 182-7t122-18l-31 47H0Z" :fill="`url(#${id}-snow-ground)`" />
       <path d="M0 207q106-38 203-10l-19 11q-88-24-184 13Z" fill="#edf3ef" opacity=".6" />
       <path d="m315 185 34-36 26 2 25 21 31-8 25 31-16 19-145 3Z" fill="#62716d" />
       <path d="m349 149 26 2 25 21-29-7-15 13-20-4Z" fill="#9ca69a" />
+      <path d="m315 185 21-11 20 4 15-13 29 7m-44 6 9 24m35-30 10 21 21-29" stroke="#354e4e" stroke-width="2" fill="none"/>
       <path d="M474 206q96-39 194-12t119 13l-27 25H471Z" fill="#583d2d" />
-      <path class="journey-mud" d="M521 211q76-27 137-10t74 9q-70 25-211 1Z" fill="#957257" opacity=".75" />
+      <path class="journey-mud" d="M521 211q76-27 137-10t74 9q-70 25-211 1Z" :fill="`url(#${id}-wet-ground)`" opacity=".9" />
+      <path d="M530 210q73-17 138-7m-123 13q65 6 141-1" stroke="#c1c4ab" stroke-width=".9" fill="none" opacity=".45"/>
+      <path d="M480 220q97-30 199-8M480 225q95-29 199-7" fill="none" stroke="#261e1b" stroke-width="2" opacity=".55"/>
+      <path d="M0 207q106-38 203-10M7 212q106-38 203-10" fill="none" stroke="#758e93" stroke-width="1.2" stroke-dasharray="3 3" opacity=".6"/>
+      <rect y="203" width="900" height="37" :fill="`url(#${id}-grain)`"/>
       <path d="M752 229q90-37 148-28V240H752Z" fill="#1c3031" />
       <path d="M762 235q59-25 133-27" fill="none" stroke="#b9976a" stroke-width="3" stroke-dasharray="10 7" opacity=".38" />
       <!-- El logo es el punto de salida; el camión lleva el nombre como carga. -->
@@ -37,31 +41,14 @@
         <image :href="appIcon" x="39" y="92" width="66" height="66" />
       </g>
       <g class="journey-convoy">
-        <ellipse cx="110" cy="75" rx="106" ry="10" fill="#081718" opacity=".42" />
-        <g class="journey-body">
-          <path d="m215 48 114-20v55L215 60Z" :fill="`url(#${id}-beam)`" />
-          <path d="M13 48h193v16H13Z" fill="#26323a" />
-          <path d="M145 11h42l23 26v19h-66Z" :fill="`url(#${id}-paint)`" />
-          <path d="M152 16h31l13 18h-44Z" fill="#adc5c5" /><path d="m175 16 8 18h13l-13-18Z" fill="#d8e7dd" opacity=".6" />
-          <path d="M17 19h116v30H17Z" fill="#594e40" stroke="#a89167" stroke-width="2" />
-          <path d="M24 23h101v22H24Z" fill="#142530" />
-          <text x="74" y="37" text-anchor="middle" fill="#f7e5c5" font-family="Segoe UI, sans-serif" font-size="11" font-weight="700">SnowRunner Studio</text>
-          <path d="M28 49V15M123 49V15M137 47h9M200 55h17v8h-20" fill="none" stroke="#a6b1a6" stroke-width="4" />
-          <path d="M140 17V1h10" fill="none" stroke="#3c4a4d" stroke-width="5" />
-          <rect x="199" y="40" width="9" height="5" rx="1" fill="#ffe1a0" />
-          <rect x="155" y="39" width="7" height="2" rx="1" fill="#f2c385" />
-          <path d="M20 56q19-18 37 0M65 56q19-18 37 0M165 56q19-18 37 0" fill="none" stroke="#22313a" stroke-width="8" />
+        <JourneyVehicle kind="expedition" :decal="appEmblem" label="SnowRunner Studio"/>
+        <g transform="translate(25,76)" data-emitter="rear-contact">
+          <g class="journey-spray journey-spray--snow"><TerrainParticles material="snow" kind="spray"/></g>
+          <g class="journey-spray journey-spray--dust"><TerrainParticles material="dust" kind="cloud" :count="9"/></g>
+          <g class="journey-spray journey-spray--mud"><TerrainParticles material="mud" kind="spray" :count="18"/></g>
         </g>
-        <g v-for="x of [39, 84, 183]" :key="x" :transform="`translate(${x},62)`">
-          <g class="journey-wheel">
-            <circle r="18" fill="#121c21" stroke="#425456" stroke-width="3" />
-            <circle r="9" fill="#b4b8aa" stroke="#526365" stroke-width="2" />
-            <path d="M-16 0h32M0-16v32M-11-11l22 22M-11 11l22-22" stroke="#647170" stroke-width="2" />
-            <circle r="4" fill="#293b43" />
-          </g>
-        </g>
-        <g class="journey-spray" fill="#c6a075">
-          <circle cx="11" cy="68" r="3" /><circle cx="2" cy="60" r="2" /><circle cx="-9" cy="64" r="3" /><circle cx="-18" cy="51" r="2" />
+        <g transform="translate(177,76)" data-emitter="front-contact">
+          <g class="journey-spray journey-spray--mud"><TerrainParticles material="mud" kind="spray" :count="10"/></g>
         </g>
       </g>
       <g class="journey-snow" fill="#dce8e2" opacity=".6">
@@ -74,24 +61,29 @@
 
 <script setup lang="ts">
 import { useId } from 'vue'
+import JourneyVehicle from './journey-vehicle.vue'
+import TerrainParticles from './terrain-particles.vue'
 defineProps<{ loop?: boolean }>()
 const id = useId().replace(/:/g, '')
 const appIcon = new URL('../../images/app-icon.png', import.meta.url).href
+const appEmblem = new URL('../../images/app-emblem.png', import.meta.url).href
 </script>
 
 <style scoped>
-.startup-journey { width: 100%; overflow: hidden; border-radius: 18px; isolation: isolate; background: #13242e; }
+.startup-journey { --journey-time:9s;--journey-repeat:1;width: 100%; overflow: hidden; border-radius: 18px; isolation: isolate; background: #13242e; }
+.startup-journey--loop { --journey-time:12s;--journey-repeat:infinite; }
 svg { display: block; width: 100%; height: auto; }
-.journey-convoy { transform-origin: 0 0; animation: journey-drive 9s cubic-bezier(.3, .05, .35, 1) both; }
-.journey-body { animation: journey-suspension .65s ease-in-out 12 alternate; }
-.journey-wheel { animation: journey-roll .72s linear 12; }
+.journey-convoy { transform-origin: 0 0; animation: journey-drive var(--journey-time) linear var(--journey-repeat) both; }
+.journey-convoy :deep(.machine-body) { animation:journey-suspension var(--journey-time) linear var(--journey-repeat) both; }
+.journey-convoy :deep(.rolling-wheel) { animation:journey-wheels var(--journey-time) linear var(--journey-repeat) both; }
 .journey-portal { animation: journey-launch 3s ease-out both; }
 .journey-logo-ring { transform-origin: 72px 125px; animation: journey-roll 6s linear infinite; }
-.journey-spray { animation: journey-spray .5s ease-out 18; }
+.journey-spray { opacity:0;animation-duration:var(--journey-time);animation-timing-function:linear;animation-iteration-count:var(--journey-repeat);animation-fill-mode:both; }
+.journey-spray--snow { animation-name:snow-contact; }
+.journey-spray--dust { animation-name:rock-contact; }
+.journey-spray--mud { animation-name:mud-contact; }
 .journey-snow { animation: journey-snow 7s linear infinite; }
 .journey-mud { animation: journey-water 4s ease-in-out infinite alternate; }
-.startup-journey--loop .journey-convoy { animation: journey-drive 12s cubic-bezier(.3, .05, .35, 1) infinite; }
-.startup-journey--loop .journey-wheel, .startup-journey--loop .journey-body, .startup-journey--loop .journey-spray { animation-iteration-count: infinite; }
 @keyframes journey-drive {
   0% { opacity: 0; transform: translate(64px, 143px) scale(.04); }
   8% { opacity: 1; transform: translate(74px, 135px) scale(.38); }
@@ -99,18 +91,21 @@ svg { display: block; width: 100%; height: auto; }
   35% { transform: translate(265px, 104px) rotate(-7deg); }
   46% { transform: translate(342px, 91px) rotate(4deg); }
   60% { transform: translate(460px, 118px) rotate(1deg); }
-  76% { transform: translate(586px, 125px) rotate(-2deg); }
-  90%, 100% { opacity: 1; transform: translate(637px, 125px); }
+  76% { transform: translate(586px, 129px) rotate(-2deg); }
+  90%, 100% { opacity: 1; transform: translate(637px, 129px); }
 }
 @keyframes journey-roll { to { transform: rotate(360deg); } }
-@keyframes journey-suspension { to { transform: translateY(1.5px) rotate(.25deg); } }
+@keyframes journey-wheels { 0% { transform:rotate(0); } 18% { transform:rotate(160deg); } 35% { transform:rotate(573deg); } 46% { transform:rotate(850deg); } 60% { transform:rotate(1272deg); } 76% { transform:rotate(1723deg); } 90%,100% { transform:rotate(1906deg); } }
+@keyframes journey-suspension { 0%,18%,24%,33%,41%,50%,58%,66%,75%,84%,90%,100% { transform:translateY(0); } 21%,28%,37%,45%,54% { transform:translateY(-1.4px) rotate(-.35deg); } 62%,71%,79%,87% { transform:translateY(.6px); } }
+@keyframes snow-contact { 0%,9% { opacity:0; } 12%,24% { opacity:1; } 28%,100% { opacity:0; } }
+@keyframes rock-contact { 0%,27% { opacity:0; } 31%,52% { opacity:.7; } 58%,100% { opacity:0; } }
+@keyframes mud-contact { 0%,55% { opacity:0; } 60%,85% { opacity:1; } 90%,100% { opacity:0; } }
 @keyframes journey-launch { 30% { filter: drop-shadow(0 0 14px #ffab53); } 100% { opacity: .75; } }
 @keyframes journey-snow { from { transform: translateY(-8px); } to { transform: translate(16px, 14px); } }
-@keyframes journey-spray { from { opacity: .9; transform: translate(7px, -3px) scale(.8); } to { opacity: 0; transform: translate(-14px, 7px) scale(1.2); } }
 @keyframes journey-water { to { opacity: .45; } }
 @media (prefers-reduced-motion: reduce) {
-  .startup-journey * { animation: none !important; }
-  .journey-convoy { transform: translate(637px, 125px); }
+  .startup-journey :deep(*) { animation: none !important; }
+  .journey-convoy { opacity:1;transform: translate(637px, 129px); }
   .journey-spray { opacity: 0; }
 }
 </style>

@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { testProjectLinks } from './project-links-ui.mjs'
 import { testConsoleDesign } from './test-console-design.mjs'
 import { testOptionalUpdates } from './test-optional-updates-ui.mjs'
+import { testJourney } from './test-journey.mjs'
 
 const repo = dirname(dirname(fileURLToPath(import.meta.url)))
 const exe = process.env.SNOWRUNNER_APP_EXE || join(repo, 'out', 'SnowRunner Studio-win32-x64', 'SnowRunner Studio.exe')
@@ -143,6 +144,7 @@ for (let attempt = 0; attempt < 160; attempt++) {
 const projectLinks=await testProjectLinks({evaluate,call,output:outputDir,repository:'snowrunner'})
 const consoleDesign=await testConsoleDesign({evaluate,call,output:outputDir})
 await testOptionalUpdates({evaluate,call,output:outputDir})
+await testJourney({evaluate,call,output:outputDir})
 if(process.env.SNOWRUNNER_LINKS_ONLY==='1'){
   await writeFile(join(outputDir,'project-links-results.json'),JSON.stringify(projectLinks,null,2))
   console.log(JSON.stringify(projectLinks,null,2))

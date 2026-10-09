@@ -2,12 +2,13 @@
 
 [Portada](README.md) · [Documentación](docs/README.md) · [Última descarga](https://github.com/OscarD0823/snowrunner/releases/latest)
 
-## Versión actual: 2.6.3
+## Versión actual: 2.6.4
 
-Nuevo icono de camión todoterreno con el emblema integrado en la carrocería, coherente en interfaz e instalador. Conserva las actualizaciones voluntarias.
+Animación de expedición renovada: camión azul y naranja con emblema en la carrocería, materiales con volumen y efectos de nieve, roca y barro según el terreno. Conserva las actualizaciones voluntarias.
 
 ## Notas disponibles
 
+- [2.6.4](docs/releases/2.6.4.md)
 - [2.6.3](docs/releases/2.6.3.md)
 - [2.6.2](docs/releases/2.6.2.md)
 - [2.6.1](docs/releases/2.6.1.md)

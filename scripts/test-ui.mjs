@@ -3,6 +3,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { testLoadingLayout } from './test-loading-layout.mjs'
+import { testJourney } from './test-journey.mjs'
 
 const repo = dirname(dirname(fileURLToPath(import.meta.url)))
 const exe = process.env.SNOWRUNNER_APP_EXE || join(repo, 'out', 'SnowRunner Studio-win32-x64', 'SnowRunner Studio.exe')
@@ -86,6 +87,12 @@ for (let attempt = 0; attempt < 120; attempt++) {
 }
 
 const results = []
+const evaluate = async expression => {
+  const result = await call('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true})
+  if(result.exceptionDetails)throw new Error(result.exceptionDetails.exception?.description ?? result.exceptionDetails.text)
+  return result.result.value
+}
+await testJourney({evaluate,call,output:outputDir,selector:'.setup-journey'})
 const journeyFrames = []
 for (const time of [0, 4300, 9000]) {
 	const state = await call('Runtime.evaluate', {
